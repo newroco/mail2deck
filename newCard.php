@@ -2,7 +2,7 @@
 ini_set('display_errors', '0');
 require_once('DeckClass.php');
 
-$inbox = imap_open("{<mail server>}INBOX", "", "")
+$inbox = imap_open("{" . MAIL_SERVER . "/imap/novalidate-cert}INBOX", MAIL_USER, MAIL_PASSWORD)
         or die("can't connect:" . imap_last_error());
 
 $emails = imap_search($inbox, 'UNSEEN');

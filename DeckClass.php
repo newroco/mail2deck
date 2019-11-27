@@ -1,7 +1,5 @@
 <?php
-define("NC_BOT", "");
-define("NC_URL", "");
-define("NC_PASSWORD", "");
+include_once("config.php");
 
 class DeckClass {
     protected function apiCall($request, $endpoint, $data){
@@ -14,7 +12,7 @@ class DeckClass {
         if ($request !== '') {// adding attachments doesn't support Content-Type: application/json.
             array_push($headers, "Content-Type: application/json");
             $options = [
-                CURLOPT_USERPWD => NC_BOT . ":" . NC_PASSWORD,
+                CURLOPT_USERPWD => NC_USER . ":" . NC_PASSWORD,
                 CURLOPT_URL => $endpoint,
                 CURLOPT_CUSTOMREQUEST => $request,
                 CURLOPT_POST => true,
@@ -24,7 +22,7 @@ class DeckClass {
             ];
         } else {
             $options = [
-                CURLOPT_USERPWD => NC_BOT . ":" . NC_PASSWORD,
+                CURLOPT_USERPWD => NC_USER . ":" . NC_PASSWORD,
                 CURLOPT_URL => $endpoint,
                 CURLOPT_POST => true,
                 CURLOPT_RETURNTRANSFER => true,
