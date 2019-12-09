@@ -107,7 +107,7 @@ class DeckClass {
     public function addAttachment($data) {
         global $mailData;
         global $cardId;
-        $fullPath = 'D:/projects/Deck API';
+        $fullPath = 'D:/projects/Deck API'; // /var/www/nextcloud/apps/mailtodeck
 
         for ($i = 1; $i < count($mailData->fileAttached); $i++) {
             $data = array(
