@@ -1,4 +1,5 @@
 <?php
+error_reporting(E_ERROR | E_PARSE);
 require_once("config.php");
 require_once('lib/DeckClass.php');
 header("Refresh: 120");
