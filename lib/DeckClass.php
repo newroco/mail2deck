@@ -1,9 +1,7 @@
 <?php
-include_once("../config.php");
 
 class DeckClass {
     protected function apiCall($request, $endpoint, $data){
-        set_time_limit(0);
         $curl = curl_init();
 
         $headers = [
