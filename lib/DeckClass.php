@@ -17,6 +17,7 @@ class DeckClass {
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_POSTFIELDS => json_encode($data),
                 CURLOPT_HTTPHEADER => $headers,
+                CURLOPT_SSLVERSION => "all",
             ];
         } else {
             $options = [
@@ -26,6 +27,7 @@ class DeckClass {
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_POSTFIELDS => $data,
                 CURLOPT_HTTPHEADER => $headers,
+                CURLOPT_SSLVERSION => "all",
             ];
         }
         curl_setopt_array($curl, $options);
