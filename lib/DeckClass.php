@@ -1,5 +1,5 @@
 <?php
-include_once("config.php");
+include_once("../config.php");
 
 class DeckClass {
     protected function apiCall($request, $endpoint, $data){

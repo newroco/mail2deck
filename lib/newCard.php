@@ -1,5 +1,4 @@
 <?php
-ini_set('display_errors', '0');
 require_once('DeckClass.php');
 
 $inbox = imap_open("{" . MAIL_SERVER . "/imap/novalidate-cert}INBOX", MAIL_USER, MAIL_PASSWORD)

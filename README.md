@@ -24,19 +24,7 @@ A particulary example:
 The card will be added in *personalBoard*, even if you use more dots in the email address.
 
 ## B. For NextCloud admins to setup
-### PHP configuration
-From **_php.ini_** file, enable imap extension.
+### Requirements
+This requires imap extension enabled
 ### Create a new user
 Configure a new user from your User Management on your NC server, which will have to function as a bot.
-### Edit files
-- Go in file **_DeckClass.php_** and customize as you need the following:
-```
-define("NC_URL", "<nextcloudServer>");
-define("NC_BOT", "<deckBotUsername>");
-define("NC_PASSWORD", "<deckBotPassword>");
-```
-- Customize the mail server from file **_newCard.php_**:
-```
-$inbox = imap_open("{<mailServer>}INBOX", "<username>", "<password>")
-        or die("can't connect:" . imap_last_error());
-```
