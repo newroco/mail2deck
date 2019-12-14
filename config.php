@@ -1,5 +1,5 @@
 <?php
-define("NC_URL", "http://devnc.newro.co");
+define("NC_SERVER", "devnc.newro.co");
 define("NC_USER", "deckbot");
 define("NC_PASSWORD", "nCFCU7b8Hvz7tB4");
 define("MAIL_SERVER", "devnc.newro.co");
