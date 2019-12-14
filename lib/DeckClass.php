@@ -62,7 +62,7 @@ class DeckClass {
         }
 
         global $boardName;
-        $boards = $this->apiCall("GET", NC_URL . "/index.php/apps/deck/api/v1.0/boards", '');
+        $boards = $this->apiCall("GET", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards", '');
         foreach($boards as $board) {
             if($board->title == $boardFromMail || $board->title == $boardName) {
                 $boardId = $board->id;
@@ -71,7 +71,7 @@ class DeckClass {
             }
         }
 
-        $stacks = $this->apiCall("GET", NC_URL . "/index.php/apps/deck/api/v1.0/boards/$boardId/stacks", '');
+        $stacks = $this->apiCall("GET", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/$boardId/stacks", '');
         foreach($stacks as $stack) {
             if($stack->title == $stackFromMail) {
                 global $stackId;
@@ -99,7 +99,7 @@ class DeckClass {
         $data->order = "-" . time(); // put the card to the top
 
         //create card
-        $response = $this->apiCall("POST", NC_URL . "/index.php/apps/deck/api/v1.0/boards/1/stacks/1/cards", $data);
+        $response = $this->apiCall("POST", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/1/stacks/1/cards", $data);
         global $cardId;
         $cardId = $response->id;
     }
@@ -113,7 +113,7 @@ class DeckClass {
             $data = array(
                 'file' => new CURLFile("$fullPath/attachments/" . $mailData->fileAttached[$i])
               );
-            $this->apiCall("", NC_URL . "/index.php/apps/deck/api/v1.0/boards/1/stacks/1/cards/$cardId/attachments?type=deck_file", $data);
+            $this->apiCall("", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/1/stacks/1/cards/$cardId/attachments?type=deck_file", $data);
         }
     }
 }
