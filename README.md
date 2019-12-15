@@ -26,5 +26,5 @@ The card will be added in *personalBoard*, even if you use more dots in the emai
 ## B. For NextCloud admins to setup
 ### Requirements
 This app requires cURL and imap.
-### Create a new user
-Configure a new user from your User Management on your NC server, which will have to function as a bot.
+### NC new user
+Create a new user from User Management on your NC server, which will have to function as a bot.
