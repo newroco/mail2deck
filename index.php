@@ -7,7 +7,6 @@ $inbox = imap_open("{" . MAIL_SERVER . "/imap/novalidate-cert}INBOX", MAIL_USER,
         or die("can't connect:" . imap_last_error());
 
 $emails = imap_search($inbox, 'UNSEEN');
-rsort($emails);
 
 if ($emails)
     for ($j = 0; $j <= count($emails) && $j <= 4; $j++) {

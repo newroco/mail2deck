@@ -39,10 +39,6 @@ class DeckClass {
 
         if ($err) {
             echo "cURL Error #:" . $err;
-        } else {
-            if ($request == 'POST') {
-                print_r($response);
-            }
         }
 
         return json_decode($response);
