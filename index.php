@@ -70,7 +70,7 @@ if ($emails)
 
         $overview = imap_headerinfo($inbox, $emails[$j]);
         $toAddress = strrev($overview->toaddress);
-        if(preg_match('/@([^.]+)/', $toAddress, $m)) {
+        if(preg_match('/@([^+]+)/', $toAddress, $m)) {
             global $boardName;
             $boardName = strrev($m[1]);
         }
@@ -95,6 +95,11 @@ if ($emails)
             $newcard->addAttachment($data);
         }
     }
+
+// function deleteOldMessages() {
+//     $emails = imap_search($inbox, "SEEN");
+
+// }
 
 imap_close($inbox);
 ?>
