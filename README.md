@@ -28,10 +28,11 @@ You can setup Posfix mail server folowing the instructions on [Posfix setup](htt
 ```
 sudo postconf -e "recipient_delimiter = +"
 ```
-
+### NC new user
+Create a new user from User Management on your NC server, which will have to function as a bot. We chose to call him *incoming*, but you can call it however you want.
 ### Download and install
 Clone this repository into *incoming* user.
-### NC new user
-Create a new user from User Management on your NC server, which will have to function as a bot.
-For this tutorial we will use a user called "*deckbot*".
-### 
+Edit as you need the config file: 
+```
+sudo nano /home/incoming/mail2deck/config.php
+```
