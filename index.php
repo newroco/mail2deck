@@ -96,10 +96,5 @@ if ($emails)
         }
     }
 
-// function deleteOldMessages() {
-//     $emails = imap_search($inbox, "SEEN");
-
-// }
-
 imap_close($inbox);
 ?>
