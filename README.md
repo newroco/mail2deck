@@ -25,7 +25,11 @@ The email address is composed like:
 This app requires cURL, imap and Postfix.
 ### Set up Postfix for incoming email
 You can setup Posfix mail server folowing the instructions on [Posfix setup](https://docs.gitlab.com/ee/administration/reply_by_email_postfix_setup.html) . <br>
-After setup, add "+" delimiter using the command: <code>sudo postconf -e "recipient_delimiter = +"</code>, used to separe the user from the board in the email address (Example: incoming+boardname@server.domain)
+After setup, add "+" delimiter (which separe the user from the board in the email address) using the command:<br>
+```
+sudo postconf -e "recipient_delimiter = +"
+```
+
 ### Download and install
 Clone this repository into 
 ### NC new user
