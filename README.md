@@ -3,6 +3,7 @@ Provides an "email in" solution for the Nextcloud Deck app
 ## A. For users
 Retains that the email subject is the card title, and the email body is the card description! <br/>
 Also, you can add even attachments to the email and they will be transposed as attachments of the card.<br/>
+__mail2deck__ doesn't add stacks (for now), so you must to have at least one stack on the board that you want to add the cards.
 To have the feature as your email to be transformed in a Deck card you have to follow some easy steps.
 ### 1) Deck Bot needs to be assigned as a user of the board that you want to add the cards.
 The card will be assigned to the Deck Bot. In case you aren't the board owner or you haven't rights to add users to the board, we consider that mail2deck for that board is disabled.
