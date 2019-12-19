@@ -28,3 +28,4 @@ The card will be added in *personalBoard*, even if you use more dots in the emai
 This app requires cURL and imap.
 ### NC new user
 Create a new user from User Management on your NC server, which will have to function as a bot.
+For this tutorial we will use a user called "incoming".
