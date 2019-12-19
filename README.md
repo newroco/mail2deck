@@ -18,14 +18,17 @@ or not, because the default stack is the left one.
 #### 2) Set the board in the email address
 For that, we have to introduce you the structure of the email address.<br/>
 The email address is composed like:
-<code>string.boardname@ncserver.domain</code>, and the important thing is between the dot (**.**) and the at (**@**), that need to be exactly the board name that you want to add the card.
-A particulary example:
-<code>any.str.ing.personalBoard@ncserver.domain</code>.
-The card will be added in *personalBoard*, even if you use more dots in the email address.
+<code>incoming+boardname@server.domain</code>, and between the plus (**+**) and the at (**@**), that need to be exactly the board name that you want to add the card.
 
 ## B. For NextCloud admins to setup
 ### Requirements
-This app requires cURL and imap.
+This app requires cURL, imap and Postfix.
+### Set up Postfix for incoming email
+You can setup Posfix mail server folowing the instructions on [Posfix setup](https://docs.gitlab.com/ee/administration/reply_by_email_postfix_setup.html) . <br>
+After setup, add "+" delimiter using the command: <code>sudo postconf -e "recipient_delimiter = +"</code>, used to separe the user from the board in the email address (Example: incoming+boardname@server.domain)
+### Download and install
+Clone this repository into 
 ### NC new user
 Create a new user from User Management on your NC server, which will have to function as a bot.
 For this tutorial we will use a user called "*deckbot*".
+### 
