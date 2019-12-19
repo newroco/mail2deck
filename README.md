@@ -18,7 +18,7 @@ or not, because the default stack is the left one.
 #### 2) Set the board in the email address
 For that, we have to introduce you the structure of the email address.<br/>
 The email address is composed like:
-<code>incoming+boardname@server.domain</code>, and between the plus (**+**) and the at (**@**), that need to be exactly the board name that you want to add the card.
+<code>incoming+boardname@server.domain</code>, and string between the plus (**+**) and the at (**@**) needs to be exactly the board name that you want to add the card.
 
 ## B. For NextCloud admins to setup
 ### Requirements
