@@ -24,13 +24,14 @@ The email address is composed like:
 ## B. For NextCloud admins to setup
 ### Requirements
 This app requires cURL, imap and Postfix.
+### NC new user
+Create a new user from User Management on your NC server, which will have to function as a bot. We chose to call him *deckbot*, but you can call it however you want.
+__Note that you have to assign *deckbot* on each board you want to add new cards from email.__
 ### Set up Postfix for incoming email
 You can setup Posfix mail server folowing the instructions on [Posfix setup](https://docs.gitlab.com/ee/administration/reply_by_email_postfix_setup.html), and after that add "+" delimiter (which separe the user from the board in the email address) using the command:<br>
 ```
 sudo postconf -e "recipient_delimiter = +"
 ```
-### NC new user
-Create a new user from User Management on your NC server, which will have to function as a bot. We chose to call him *incoming*, but you can call it however you want.
 ### Download and install
 Clone this repository into *incoming* user.
 Edit as you need the config file: 
@@ -43,4 +44,5 @@ sudo crontab -u incoming -e
 ```
 Add the following line in the opened file:
 <code>*/5 * * * * /usr/bin/php /home/incoming/mail2deck/index.php >/dev/null 2>&1</code>
-
+### Finish
+Now __mail2deck__ will add new cards every five minutes if new emails are received.
