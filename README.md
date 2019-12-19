@@ -37,3 +37,10 @@ Edit as you need the config file:
 ```
 sudo nano /home/incoming/mail2deck/config.php
 ```
+### Add a cronjob which will run mail2deck.
+```
+sudo crontab -u incoming -e
+```
+Add the following line in the opened file:
+<code>*/5 * * * * /usr/bin/php /home/incoming/mail2deck/index.php >/dev/null 2>&1</code>
+
