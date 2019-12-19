@@ -35,7 +35,11 @@ You can setup Posfix mail server folowing the instructions on [Posfix setup](htt
 sudo postconf -e "recipient_delimiter = +"
 ```
 ### Download and install
-Clone this repository into *incoming* user.
+Clone this repository into *incoming* user.<br>
+```
+cd /home/incoming/
+git clone https://github.com/a11exandru/mail2deck.git mail2deck
+```
 Edit as you need the config file: 
 ```
 sudo nano /home/incoming/mail2deck/config.php
