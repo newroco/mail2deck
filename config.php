@@ -1,8 +1,8 @@
 <?php
-define("NC_SERVER", "devnc.newro.co");
+define("NC_SERVER", ""); // server.domain
 define("NC_USER", "deckbot");
-define("NC_PASSWORD", "nCFCU7b8Hvz7tB4");
-define("MAIL_SERVER", "devnc.newro.co");
+define("NC_PASSWORD", "");
+define("MAIL_SERVER", ""); // server.domain
 define("MAIL_USER", "incoming");
-define("MAIL_PASSWORD", "iFd27heCwe8dL5");
+define("MAIL_PASSWORD", "");
 ?>
