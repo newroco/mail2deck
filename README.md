@@ -4,7 +4,7 @@ Provides an "email in" solution for the Nextcloud Deck app
 Retains the following:
 1) Email subject is the card title, and email body is the card description! <br/>
 2) You can add even attachments to the email and they will be transposed as attachments of the card.<br/>
-3) __mail2deck__ doesn't add stacks (for now), so you must to have at least one stack on the board that you want to add the cards.<br>
+3) __mail2deck__ doesn't add stacks (for now), so you must to have at least one stack on the board you want to add the cards.<br>
 
 To have the feature as your email to be transformed in a Deck card you have to follow some easy steps.
 ### 1) Deck Bot needs to be assigned as a user of the board that you want to add the cards.
@@ -25,7 +25,7 @@ The email address is composed like:
 
 ## B. For NextCloud admins to setup
 ### Requirements
-This app requires cURL, imap and Postfix.
+This app requires php-curl, php-imap and Postfix.
 ### NC new user
 Create a new user from User Management on your NC server, which will have to function as a bot. We chose to call him *deckbot*, but you can call it however you want.<br>
 __Note__: that you have to assign *deckbot* on each board you want to add new cards from email.
