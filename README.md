@@ -38,7 +38,7 @@ sudo postconf -e "recipient_delimiter = +"
 Clone this repository into *incoming* user.<br>
 ```
 cd /home/incoming/
-git clone https://github.com/a11exandru/mail2deck.git mail2deck
+git clone https://github.com/putt1ck/mail2deck.git mail2deck
 ```
 Edit as you need the config file: 
 ```
