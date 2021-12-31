@@ -6,30 +6,31 @@ class DeckClass {
 
         $headers = [
             "OCS-APIRequest: true"
-        ];
-        if ($request !== '') {// adding attachments doesn't support Content-Type: application/json.
-            array_push($headers, "Content-Type: application/json");
-            $options = [
-                CURLOPT_USERPWD => NC_USER . ":" . NC_PASSWORD,
-                CURLOPT_URL => $endpoint,
-                CURLOPT_CUSTOMREQUEST => $request,
-                CURLOPT_POST => true,
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_POSTFIELDS => json_encode($data),
-                CURLOPT_HTTPHEADER => $headers,
-                CURLOPT_SSLVERSION => "all",
-            ];
-        } else {
-            $options = [
-                CURLOPT_USERPWD => NC_USER . ":" . NC_PASSWORD,
-                CURLOPT_URL => $endpoint,
-                CURLOPT_POST => true,
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_POSTFIELDS => $data,
-                CURLOPT_HTTPHEADER => $headers,
-                CURLOPT_SSLVERSION => "all",
-            ];
-        }
+				];
+				
+				// set CURLOPTs commmon to all HTTP methods
+				$options = [
+					  CURLOPT_USERPWD => NC_USER . ":" . NC_PASSWORD,
+            CURLOPT_URL => $endpoint,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_SSLVERSION => "all",
+				];
+
+				// set HTTP request specific headers and options/data
+				if ($request == '') {// an empty request value is used for attachments
+					// add data without JSON encoding or JSON Content-Type header
+					$options[CURLOPT_POST] = true;
+					$options[CURLOPT_POSTFIELDS] = $data;
+				} elseif ($request == "POST") {
+					array_push($headers, "Content-Type: application/json");
+					$options[CURLOPT_POST] = true;
+					$options[CURLOPT_POSTFIELDS] = json_encode($data);
+				}	elseif ($request == "GET") {
+					array_push($headers, "Content-Type: application/json");
+				}
+
+				// add headers to options
+				$options[CURLOPT_HTTPHEADER] = $headers;
         curl_setopt_array($curl, $options);
 
         $response = curl_exec($curl);
