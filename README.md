@@ -35,11 +35,11 @@ You can setup Posfix mail server folowing the instructions on [Posfix setup](htt
 ```
 sudo postconf -e "recipient_delimiter = +"
 ```
-#### Option 2 - Use an existing email server.
+#### Option 2 - Use an existing email server
 This could be any hosted email service. The only requirement is that you can connect to it via the IMAP protocol.
-*Please note this option may not be as flexible as a selfhosted server. For example your email service may not support the "+"delimeter for directing messages to a specific board*
+*Please note this option may not be as flexible as a self-hosted server. For example your email service may not support the "+"delimiter for directing messages to a specific board.*
 ### Download and install
-If using a self-hosted Postfix server, clone this repository into *incoming* user. If not you may need to create a new user on your system and adjust the commands in future steps to match that username.<br>
+If using a self-hosted Postfix server, clone this repository into the home directory of the *incoming* user. If not self-hosting, you may need to create a new user on your system and adjust the commands in future steps to match that username.<br>
 ```
 cd /home/incoming/
 git clone https://github.com/putt1ck/mail2deck.git mail2deck
@@ -48,6 +48,7 @@ Edit the config file as you need:
 ```
 sudo nano /home/incoming/mail2deck/config.php
 ```
+*You can refer to https://www.php.net/manual/en/function.imap-open.php for setting the value of MAIL_SERVER_FLAGS*
 ### Add a cronjob which will run mail2deck.
 ```
 sudo crontab -u incoming -e
