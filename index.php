@@ -3,7 +3,7 @@ error_reporting(E_ERROR | E_PARSE);
 require_once("config.php");
 require_once('lib/DeckClass.php');
 
-$inbox = imap_open("{" . MAIL_SERVER . "/imap/novalidate-cert}INBOX", MAIL_USER, MAIL_PASSWORD)
+$inbox = imap_open("{" . MAIL_SERVER . "/imap" . MAIL_SERVER_FLAGS . "}INBOX", MAIL_USER, MAIL_PASSWORD)
         or die("can't connect:" . imap_last_error());
 
 $emails = imap_search($inbox, 'UNSEEN');
