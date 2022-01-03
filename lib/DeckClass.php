@@ -103,11 +103,11 @@ class DeckClass {
     public function addAttachment($data) {
         global $mailData;
         global $cardId;
-        $fullPath = 'D:/projects/Deck API'; // /var/www/nextcloud/apps/mailtodeck
+        $fullPath = getcwd() . "/attachments/"; //get full path to attachments dirctory
 
         for ($i = 1; $i < count($mailData->fileAttached); $i++) {
             $data = array(
-                'file' => new CURLFile("$fullPath/attachments/" . $mailData->fileAttached[$i])
+                'file' => new CURLFile($fullPath . $mailData->fileAttached[$i])
               );
             $this->apiCall("", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/1/stacks/1/cards/$cardId/attachments?type=deck_file", $data);
         }
