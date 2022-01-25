@@ -80,8 +80,8 @@ if ($emails)
             $message = imap_fetchbody($inbox, $emails[$j], 1);
         }
         $mailData = new stdClass();
-        $mailData->mailSubject = $overview->subject;
-        $mailData->mailMessage = $message;
+        $mailData->mailSubject = DECODE_SPECIAL_CHARACTERS ? mb_decode_mimeheader($overview->subject) : $overview->subject;
+        $mailData->mailMessage = DECODE_SPECIAL_CHARACTERS ? quoted_printable_decode($message) : $message;
         $mailData->from = $overview->from[0]->mailbox . '@' . $overview->from[0]->host;
 
         $newcard = new DeckClass();

@@ -30,7 +30,7 @@ Note:
 
 ## B. For NextCloud admins to setup
 ### Requirements
-This app requires php-curl, php-imap and some sort of imap server (e.g. Postfix with Courier).
+This app requires php-curl, php-mbstring ,php-imap and some sort of imap server (e.g. Postfix with Courier).
 ### NC new user
 Create a new user from User Management on your NC server, which will have to function as a bot. We chose to call him *deckbot*, but you can call it however you want.<br>
 __Note__: that you have to assign *deckbot* on each board you want to add new cards from email.
