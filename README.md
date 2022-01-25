@@ -4,7 +4,7 @@ Provides an "email in" solution for the Nextcloud Deck app
 Follow the above steps to add a new card from email.
 
 * Deck Bot is the user who will create the cards and it will be set up by your nextcloud admin.
-* In this tutorial email address for Deck Bot will be: <code>bot@ncserver.com<code>
+* In this tutorial email address for Deck Bot will be: <code>bot@ncserver.com</code>
 
 ### 1) Assign Deck Bot to the board.
 ### 2) Mail subject & content
