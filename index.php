@@ -3,24 +3,18 @@ error_reporting(E_ERROR | E_PARSE);
 require_once("config.php");
 require_once('lib/DeckClass.php');
 
-$inbox = imap_open("{" . MAIL_SERVER . "/imap" . MAIL_SERVER_FLAGS . "}INBOX", MAIL_USER, MAIL_PASSWORD)
+$inbox = imap_open("{" . MAIL_SERVER . ":" . MAIL_SERVER_PORT . MAIL_SERVER_FLAGS . "}INBOX", MAIL_USER, MAIL_PASSWORD)
         or die("can't connect:" . imap_last_error());
 
 $emails = imap_search($inbox, 'UNSEEN');
 
 if ($emails)
-    for ($j = 0; $j <= count($emails) && $j <= 4; $j++) {
+    for ($j = 0; $j < count($emails) && $j < 5; $j++) {
         $structure = imap_fetchstructure($inbox, $emails[$j]);
         $attachments = array();
+        $attNames = array();
         if (isset($structure->parts) && count($structure->parts)) {
             for ($i = 0; $i < count($structure->parts); $i++) {
-                $attachments[$i] = array(
-                    'is_attachment' => false,
-                    'filename' => '',
-                    'name' => '',
-                    'attachment' => ''
-                );
-
                 if ($structure->parts[$i]->ifdparameters) {
                     foreach ($structure->parts[$i]->dparameters as $object) {
                         if (strtolower($object->attribute) == 'filename') {
@@ -50,51 +44,37 @@ if ($emails)
                 }
             }
         }
-        for ($i = 1; $i < count($attachments); $i++) {
+        for ($i = 1; $i <= count($attachments); $i++) {
+            if(! file_exists(getcwd() . '/attachments')) {
+                mkdir(getcwd() . '/attachments');
+            }
             if ($attachments[$i]['is_attachment'] == 1) {
                 $filename = $attachments[$i]['name'];
                 if (empty($filename)) $filename = $attachments[$i]['filename'];
 
-                $fp = fopen("./attachments/" . $filename, "w+");
+                $fp = fopen(getcwd() . '/attachments/' . $filename, "w+");
                 fwrite($fp, $attachments[$i]['attachment']);
                 fclose($fp);
-            }
-        }
-
-        $hasAttachment = false;
-        for ($i = 0; $i < count($attachments); $i++) {
-            if ($attachments[$i]['is_attachment'] != '') {
-                $hasAttachment = true;
+                array_push($attNames, $attachments[$i]['filename']);
             }
         }
 
         $overview = imap_headerinfo($inbox, $emails[$j]);
-        $toAddress = strrev($overview->toaddress);
-        if(preg_match('/@([^+]+)/', $toAddress, $m)) {
-            global $boardName;
-            $boardName = strrev($m[1]);
-        }
-        if ($hasAttachment) {
-            $message = imap_fetchbody($inbox, $emails[$j], 1.1);
+        
+        $data = new stdClass();
+        $data->title = DECODE_SPECIAL_CHARACTERS ? mb_decode_mimeheader($overview->subject) : $overview->subject;
+        $data->type = "plain";
+        if(count($attachments)) {
+            $data->attachments = $attNames;
+            $description = DECODE_SPECIAL_CHARACTERS ? quoted_printable_decode(imap_fetchbody($inbox, $emails[$j], 1.1)) : imap_fetchbody($inbox, $emails[$j], 1.1);
         } else {
-            $message = imap_fetchbody($inbox, $emails[$j], 1);
+            $description = DECODE_SPECIAL_CHARACTERS ? quoted_printable_decode(imap_fetchbody($inbox, $emails[$j], 1)) : imap_fetchbody($inbox, $emails[$j], 1);
         }
-        $mailData = new stdClass();
-        $mailData->mailSubject = DECODE_SPECIAL_CHARACTERS ? mb_decode_mimeheader($overview->subject) : $overview->subject;
-        $mailData->mailMessage = DECODE_SPECIAL_CHARACTERS ? quoted_printable_decode($message) : $message;
-        $mailData->from = $overview->from[0]->mailbox . '@' . $overview->from[0]->host;
+        $data->description = $description;
 
         $newcard = new DeckClass();
-        $newcard->getParameters();
         $newcard->addCard($data);
-
-        if ($hasAttachment) {
-            for ($i = 1; $i <= count($attachments); $i++) {
-                $mailData->fileAttached[$i] = $attachments[$i]['name'];
-            }
-            $newcard->addAttachment($data);
-        }
     }
-
-imap_close($inbox);
+    
+    imap_close($inbox);
 ?>

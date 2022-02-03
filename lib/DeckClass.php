@@ -1,116 +1,87 @@
 <?php
 
 class DeckClass {
-    protected function apiCall($request, $endpoint, $data){
+    private function apiCall($request, $endpoint, $data = null, $attachment = false){
         $curl = curl_init();
-
-        $headers = [
-            "OCS-APIRequest: true"
-				];
-				
-				// set CURLOPTs commmon to all HTTP methods
-				$options = [
-					  CURLOPT_USERPWD => NC_USER . ":" . NC_PASSWORD,
+        if($data && !$attachment) {
+            $endpoint .= '?' . http_build_query($data);
+        }
+        curl_setopt_array($curl, array(
             CURLOPT_URL => $endpoint,
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_SSLVERSION => "all",
-				];
-
-				// set HTTP request specific headers and options/data
-				if ($request == '') {// an empty request value is used for attachments
-					// add data without JSON encoding or JSON Content-Type header
-					$options[CURLOPT_POST] = true;
-					$options[CURLOPT_POSTFIELDS] = $data;
-				} elseif ($request == "POST") {
-					array_push($headers, "Content-Type: application/json");
-					$options[CURLOPT_POST] = true;
-					$options[CURLOPT_POSTFIELDS] = json_encode($data);
-				}	elseif ($request == "GET") {
-					array_push($headers, "Content-Type: application/json");
-				}
-
-				// add headers to options
-				$options[CURLOPT_HTTPHEADER] = $headers;
-        curl_setopt_array($curl, $options);
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => $request,
+            CURLOPT_POSTFIELDS => (array) $data,
+            CURLOPT_HTTPHEADER => array(
+                'Authorization: Basic ' . base64_encode(NC_USER . ':' . NC_PASSWORD),
+                'OCS-APIRequest: true',
+            ),
+        ));
 
         $response = curl_exec($curl);
         $err = curl_error($curl);
 
         curl_close($curl);
-
-        if ($err) {
-            echo "cURL Error #:" . $err;
-        }
+        if($err) echo "cURL Error #:" . $err;
 
         return json_decode($response);
     }
 
-    public function getParameters() {// get the board and the stack
-        global $mailData;
-        global $boardId;
-
-        if(preg_match('/b-"([^"]+)"/', $mailData->mailSubject, $m) || preg_match("/b-'([^']+)'/", $mailData->mailSubject, $m)) {
+    public function getParameters($params) {// get the board and the stack
+        if(preg_match('/b-"([^"]+)"/', $params, $m) || preg_match("/b-'([^']+)'/", $params, $m)) {
             $boardFromMail = $m[1];
-            $mailData->mailSubject = str_replace($m[0], '', $mailData->mailSubject);
+            $params = str_replace($m[0], '', $params);
         }
-        if(preg_match('/s-"([^"]+)"/', $mailData->mailSubject, $m) || preg_match("/s-'([^']+)'/", $mailData->mailSubject, $m)) {
+        if(preg_match('/s-"([^"]+)"/', $params, $m) || preg_match("/s-'([^']+)'/", $params, $m)) {
             $stackFromMail = $m[1];
-            $mailData->mailSubject = str_replace($m[0], '', $mailData->mailSubject);
+            $params = str_replace($m[0], '', $params);
         }
 
-        global $boardName;
-        $boards = $this->apiCall("GET", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards", '');
+        $boards = $this->apiCall("GET", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards");
         foreach($boards as $board) {
-            if($board->title == $boardFromMail || $board->title == $boardName) {
+            if(strtolower($board->title) == strtolower($boardFromMail)) {
                 $boardId = $board->id;
-            } else {
-                echo "Board not found\n";
             }
         }
 
-        $stacks = $this->apiCall("GET", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/$boardId/stacks", '');
-        foreach($stacks as $stack) {
-            if($stack->title == $stackFromMail) {
-                global $stackId;
-                $stackId = $stack->id;
-            } else if (!is_numeric($stackId)) {
-                global $stackId;
-                $stackId = $stacks[0]->id;
-            }
+        if($boardId) {
+            $stacks = $this->apiCall("GET", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/$boardId/stacks");
+            foreach($stacks as $stack)
+                (strtolower($stack->title) == strtolower($stackFromMail)) ? $stackId = $stack->id : $stackId = $stacks[0]->id;
         }
+
+        $boardStack = new stdClass();
+        $boardStack->board = $boardId;
+        $boardStack->stack = $stackId;
+        $boardStack->newTitle = $params;
+
+        return $boardStack;
     }
 
     public function addCard($data) {
-        global $mailData;
-        global $stackId;
+        $params = $this->getParameters($data->title);
+        $data->title = $params->newTitle;
+        $card = $this->apiCall("POST", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/{$params->board}/stacks/{$params->stack}/cards", $data);
+        $card->board = $params->board;
+        $card->stack = $params->stack;
+        if($data->attachments) $this->addAttachments($card, $data->attachments);
 
-        $data = new stdClass();
-        $data->stackId = $stackId;
-        $data->title = $mailData->mailSubject;
-        $data->description =
-"$mailData->mailMessage
-***
-### $mailData->from
-";
-        $data->type = "plain";
-        $data->order = "-" . time(); // put the card to the top
-
-        //create card
-        $response = $this->apiCall("POST", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/1/stacks/1/cards", $data);
-        global $cardId;
-        $cardId = $response->id;
+        return $card;
     }
 
-    public function addAttachment($data) {
-        global $mailData;
-        global $cardId;
-        $fullPath = getcwd() . "/attachments/"; //get full path to attachments dirctory
-
-        for ($i = 1; $i < count($mailData->fileAttached); $i++) {
+    private function addAttachments($card, $attachments) {
+        $fullPath = getcwd() . "/attachments/"; //get full path to attachments directory
+        for ($i = 0; $i < count($attachments); $i++) {
+            $file = $fullPath . $attachments[$i];
             $data = array(
-                'file' => new CURLFile($fullPath . $mailData->fileAttached[$i])
-              );
-            $this->apiCall("", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/1/stacks/1/cards/$cardId/attachments?type=deck_file", $data);
+                'file' => new CURLFile($file)
+            );
+            $this->apiCall("POST", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/{$card->board}/stacks/{$card->stack}/cards/{$card->id}/attachments?type=file", $data, true);
+            unlink($file);
         }
     }
 }
