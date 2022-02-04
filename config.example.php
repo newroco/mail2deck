@@ -8,4 +8,5 @@ define("MAIL_SERVER_PORT", "143");
 define("MAIL_USER", "incoming");
 define("MAIL_PASSWORD", "****");
 define("DECODE_SPECIAL_CHARACTERS", true); //requires mbstring, if false special characters (like öäüß) won't be displayed correctly
+define("ASSIGN_SENDER", true); // if true, sender will be assigned to card if has NC account
 ?>

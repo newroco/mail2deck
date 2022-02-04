@@ -15,12 +15,13 @@ class DeckClass {
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => $request,
-            CURLOPT_POSTFIELDS => (array) $data,
             CURLOPT_HTTPHEADER => array(
                 'Authorization: Basic ' . base64_encode(NC_USER . ':' . NC_PASSWORD),
                 'OCS-APIRequest: true',
             ),
         ));
+
+        if($request === 'POST') curl_setopt($curl, CURLOPT_POSTFIELDS, (array) $data);
 
         $response = curl_exec($curl);
         $err = curl_error($curl);
@@ -62,12 +63,15 @@ class DeckClass {
         return $boardStack;
     }
 
-    public function addCard($data) {
+    public function addCard($data, $user) {
         $params = $this->getParameters($data->title);
         $data->title = $params->newTitle;
         $card = $this->apiCall("POST", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/{$params->board}/stacks/{$params->stack}/cards", $data);
         $card->board = $params->board;
         $card->stack = $params->stack;
+        if(ASSIGN_SENDER) {
+            $this->assignUser($card, $user);
+        }
         if($data->attachments) $this->addAttachments($card, $data->attachments);
 
         return $card;
@@ -82,6 +86,19 @@ class DeckClass {
             );
             $this->apiCall("POST", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/{$card->board}/stacks/{$card->stack}/cards/{$card->id}/attachments?type=file", $data, true);
             unlink($file);
+        }
+    }
+
+    public function assignUser($card, $mailUser)
+    {
+        $board = $this->apiCall("GET", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/{$card->board}");
+        $boardUsers = array_map(function ($user) { return $user->uid; }, $board->users);
+
+        foreach($boardUsers as $user) {
+            if($user === $mailUser->userId) {
+                $this->apiCall("PUT", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/{$card->board}/stacks/{$card->stack}/cards/{$card->id}/assignUser", $mailUser);
+                break;
+            }
         }
     }
 }

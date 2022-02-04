@@ -2,15 +2,14 @@
 error_reporting(E_ERROR | E_PARSE);
 require_once("config.php");
 require_once('lib/DeckClass.php');
+require_once('lib/MailClass.php');
 
-$inbox = imap_open("{" . MAIL_SERVER . ":" . MAIL_SERVER_PORT . MAIL_SERVER_FLAGS . "}INBOX", MAIL_USER, MAIL_PASSWORD)
-        or die("can't connect:" . imap_last_error());
-
-$emails = imap_search($inbox, 'UNSEEN');
+$inbox = new MailClass();
+$emails = $inbox->getNewMessages();
 
 if ($emails)
     for ($j = 0; $j < count($emails) && $j < 5; $j++) {
-        $structure = imap_fetchstructure($inbox, $emails[$j]);
+        $structure = $inbox->fetchMessageStructure($emails[$j]);
         $attachments = array();
         $attNames = array();
         if (isset($structure->parts) && count($structure->parts)) {
@@ -34,7 +33,7 @@ if ($emails)
                 }
 
                 if ($attachments[$i]['is_attachment']) {
-                    $attachments[$i]['attachment'] = imap_fetchbody($inbox, $emails[$j], $i+1);
+                    $attachments[$i]['attachment'] = $inbox->fetchMessageBody($emails[$j], $i+1);
                     if ($structure->parts[$i]->encoding == 3) { // 3 = BASE64
                         $attachments[$i]['attachment'] = base64_decode($attachments[$i]['attachment']);
                     }
@@ -59,22 +58,24 @@ if ($emails)
             }
         }
 
-        $overview = imap_headerinfo($inbox, $emails[$j]);
+        $overview = $inbox->headerInfo($emails[$j]);
         
         $data = new stdClass();
         $data->title = DECODE_SPECIAL_CHARACTERS ? mb_decode_mimeheader($overview->subject) : $overview->subject;
         $data->type = "plain";
+        $data->order = 999;
         if(count($attachments)) {
             $data->attachments = $attNames;
-            $description = DECODE_SPECIAL_CHARACTERS ? quoted_printable_decode(imap_fetchbody($inbox, $emails[$j], 1.1)) : imap_fetchbody($inbox, $emails[$j], 1.1);
+            $description = DECODE_SPECIAL_CHARACTERS ? quoted_printable_decode($inbox->fetchMessageBody($emails[$j], 1.1)) : $inbox->fetchMessageBody($emails[$j], 1.1);
         } else {
-            $description = DECODE_SPECIAL_CHARACTERS ? quoted_printable_decode(imap_fetchbody($inbox, $emails[$j], 1)) : imap_fetchbody($inbox, $emails[$j], 1);
+            $description = DECODE_SPECIAL_CHARACTERS ? quoted_printable_decode($inbox->fetchMessageBody($emails[$j], 1)) : $inbox->fetchMessageBody($emails[$j], 1);
         }
         $data->description = $description;
+        $mailSender = new stdClass();
+        $mailSender->userId = $overview->from[0]->mailbox;
+        $mailSender = 'alex.puiu';
 
         $newcard = new DeckClass();
-        $newcard->addCard($data);
+        $newcard->addCard($data, $mailSender);
     }
-    
-    imap_close($inbox);
 ?>
