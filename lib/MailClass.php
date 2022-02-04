@@ -31,7 +31,22 @@ class MailClass {
     }
 
     public function reply($sender, $response) {
-        $to = $sender->mailbox . '@' . $sender->host;
-        mail($to, 'your card has been created', 'card/board link.....');
+        $serverName = parse_url(NC_SERVER);
+
+        $headers = array(
+            'From' => 'no-reply@' . $serverName['host'],
+            'MIME-Version' => '1.0',
+            'Content-Type' => 'text/html'
+        );
+
+        $message = "<html>";
+        $message .= "<head><title>You created a new issue on board {$response->boardTitle}.</title></head>";
+        $message .= "<body>";
+        $message .= "<h1>You created a new issue on board {$response->boardTitle}.</h1>";
+        $message .= "<p>Check out this <a href=\"" . NC_SERVER . "/index.php/apps/deck/#/board/{$response->board}/card/{$response->id}" . "\">link</a> to see your newly created card.</p>";
+        $message .= "</body>";
+        $message .= "</html>";
+
+        mail($sender, 'An issue has been reported!', $message, $headers);
     }
 }

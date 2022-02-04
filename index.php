@@ -73,9 +73,12 @@ if ($emails)
         $data->description = $description;
         $mailSender = new stdClass();
         $mailSender->userId = $overview->from[0]->mailbox;
-        $mailSender = 'alex.puiu';
 
         $newcard = new DeckClass();
-        $newcard->addCard($data, $mailSender);
+        $response = $newcard->addCard($data, $mailSender);
+        $mailSender->userId .= "@{$overview->from[0]->host}";
+        if($response && ASSIGN_SENDER) {
+            $inbox->reply($mailSender->userId, $response);
+        }
     }
 ?>

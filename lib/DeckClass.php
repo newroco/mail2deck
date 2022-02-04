@@ -1,6 +1,8 @@
 <?php
 
 class DeckClass {
+    private $responseCode;
+
     private function apiCall($request, $endpoint, $data = null, $attachment = false){
         $curl = curl_init();
         if($data && !$attachment) {
@@ -25,6 +27,7 @@ class DeckClass {
 
         $response = curl_exec($curl);
         $err = curl_error($curl);
+        $this->responseCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
 
         curl_close($curl);
         if($err) echo "cURL Error #:" . $err;
@@ -46,6 +49,7 @@ class DeckClass {
         foreach($boards as $board) {
             if(strtolower($board->title) == strtolower($boardFromMail)) {
                 $boardId = $board->id;
+                $boardName = $board->title;
             }
         }
 
@@ -59,6 +63,7 @@ class DeckClass {
         $boardStack->board = $boardId;
         $boardStack->stack = $stackId;
         $boardStack->newTitle = $params;
+        $boardStack->boardTitle = $boardName;
 
         return $boardStack;
     }
@@ -69,10 +74,14 @@ class DeckClass {
         $card = $this->apiCall("POST", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/{$params->board}/stacks/{$params->stack}/cards", $data);
         $card->board = $params->board;
         $card->stack = $params->stack;
-        if(ASSIGN_SENDER) {
-            $this->assignUser($card, $user);
+
+        if($this->responseCode == 200) {
+            if(ASSIGN_SENDER) $this->assignUser($card, $user);
+            if($data->attachments) $this->addAttachments($card, $data->attachments);
+            $card->boardTitle = $params->boardTitle;
+        } else {
+            return false;
         }
-        if($data->attachments) $this->addAttachments($card, $data->attachments);
 
         return $card;
     }
