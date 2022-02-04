@@ -35,11 +35,12 @@ class DeckClass {
         return json_decode($response);
     }
 
-    public function getParameters($params) {// get the board and the stack
-        if(preg_match('/b-"([^"]+)"/', $params, $m) || preg_match("/b-'([^']+)'/", $params, $m)) {
-            $boardFromMail = $m[1];
-            $params = str_replace($m[0], '', $params);
-        }
+    public function getParameters($params, $boardFromMail = null) {// get the board and the stack
+	    if(!$boardFromMail) // if board is not set within the email address, look for board into email subject
+        	if(preg_match('/b-"([^"]+)"/', $params, $m) || preg_match("/b-'([^']+)'/", $params, $m)) {
+            		$boardFromMail = $m[1];
+            		$params = str_replace($m[0], '', $params);
+        	}
         if(preg_match('/s-"([^"]+)"/', $params, $m) || preg_match("/s-'([^']+)'/", $params, $m)) {
             $stackFromMail = $m[1];
             $params = str_replace($m[0], '', $params);
@@ -68,8 +69,8 @@ class DeckClass {
         return $boardStack;
     }
 
-    public function addCard($data, $user) {
-        $params = $this->getParameters($data->title);
+    public function addCard($data, $user, $board = null) {
+        $params = $this->getParameters($data->title, $board);
         $data->title = $params->newTitle;
         $card = $this->apiCall("POST", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/{$params->board}/stacks/{$params->stack}/cards", $data);
         $card->board = $params->board;

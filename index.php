@@ -59,6 +59,8 @@ if ($emails)
         }
 
         $overview = $inbox->headerInfo($emails[$j]);
+        $board = null;
+        if(strstr($overview->to[0]->mailbox, '+')) $board = substr($overview->to[0]->mailbox, strpos($overview->to[0]->mailbox, '+') + 1);
         
         $data = new stdClass();
         $data->title = DECODE_SPECIAL_CHARACTERS ? mb_decode_mimeheader($overview->subject) : $overview->subject;
@@ -75,7 +77,7 @@ if ($emails)
         $mailSender->userId = $overview->from[0]->mailbox;
 
         $newcard = new DeckClass();
-        $response = $newcard->addCard($data, $mailSender);
+        $response = $newcard->addCard($data, $mailSender, $board);
         $mailSender->userId .= "@{$overview->from[0]->host}";
         if($response && ASSIGN_SENDER) {
             $inbox->reply($mailSender->userId, $response);
