@@ -16,7 +16,8 @@ Here's how the email subject should look like:
 <code>Update website logo b-'website' s-'to do'</code>
 
 *You can use single or double quotes.*
-*Case-insensitive for board and stack respectively*
+
+*Case-insensitive for board and stack respectively.*
 
 ### 2.2: Set the board in the email address
 At the end of the email address prefix (before @) add "+website"
