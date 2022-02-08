@@ -80,6 +80,11 @@ if ($emails)
         $response = $newcard->addCard($data, $mailSender, $board);
         $mailSender->userId .= "@{$overview->from[0]->host}";
 
-        ($response) ? $inbox->reply($mailSender->userId, $response) : $inbox->reply($mailSender->userId);
+        if($response) {
+            $inbox->reply($mailSender->userId, $response);
+        } else {
+            $inbox->reply($mailSender->userId);
+            foreach($attNames as $attachment) unlink(getcwd() . "/attachments/" . $attachment);
+        }
     }
 ?>
