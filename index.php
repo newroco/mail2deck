@@ -60,7 +60,10 @@ if ($emails)
 
         $overview = $inbox->headerInfo($emails[$j]);
         $board = null;
-        if(strstr($overview->to[0]->mailbox, '+')) $board = substr($overview->to[0]->mailbox, strpos($overview->to[0]->mailbox, '+') + 1);
+        if(strstr($overview->to[0]->mailbox, '+')) {
+            $board = substr($overview->to[0]->mailbox, strpos($overview->to[0]->mailbox, '+') + 1);
+            if(str_contains($board, '+')) $board = str_replace('+', ' ', $board);
+        }
         
         $data = new stdClass();
         $data->title = DECODE_SPECIAL_CHARACTERS ? mb_decode_mimeheader($overview->subject) : $overview->subject;
