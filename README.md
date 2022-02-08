@@ -7,6 +7,8 @@ Follow the above steps to add a new card from email.
 * In this tutorial email address for Deck Bot will be: <code>bot@ncserver.com</code>
 
 ## 1) Assign Deck Bot to the board.
+Deck Bot must be assigned and must have edit permission inside the board.
+
 ## 2) Mail subject & content
 Let's assume you want to add a card with title "Update website logo" on board "Website" and stack "To do".
 You can do this in two ways.

@@ -49,6 +49,9 @@ class DeckClass {
         $boards = $this->apiCall("GET", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards");
         foreach($boards as $board) {
             if(strtolower($board->title) == strtolower($boardFromMail)) {
+                if(!$this->checkBotPermissions($board)) {
+                    return false;
+                }
                 $boardId = $board->id;
                 $boardName = $board->title;
             }
@@ -58,6 +61,8 @@ class DeckClass {
             $stacks = $this->apiCall("GET", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/$boardId/stacks");
             foreach($stacks as $stack)
                 (strtolower($stack->title) == strtolower($stackFromMail)) ? $stackId = $stack->id : $stackId = $stacks[0]->id;
+        } else {
+            return false;
         }
 
         $boardStack = new stdClass();
@@ -71,20 +76,23 @@ class DeckClass {
 
     public function addCard($data, $user, $board = null) {
         $params = $this->getParameters($data->title, $board);
-        $data->title = $params->newTitle;
-        $card = $this->apiCall("POST", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/{$params->board}/stacks/{$params->stack}/cards", $data);
-        $card->board = $params->board;
-        $card->stack = $params->stack;
 
-        if($this->responseCode == 200) {
-            if(ASSIGN_SENDER) $this->assignUser($card, $user);
-            if($data->attachments) $this->addAttachments($card, $data->attachments);
-            $card->boardTitle = $params->boardTitle;
-        } else {
-            return false;
+        if($params) {
+            $data->title = $params->newTitle;
+            $card = $this->apiCall("POST", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/{$params->board}/stacks/{$params->stack}/cards", $data);
+            $card->board = $params->board;
+            $card->stack = $params->stack;
+    
+            if($this->responseCode == 200) {
+                if(ASSIGN_SENDER) $this->assignUser($card, $user);
+                if($data->attachments) $this->addAttachments($card, $data->attachments);
+                $card->boardTitle = $params->boardTitle;
+            } else {
+                return false;
+            }
+            return $card;
         }
-
-        return $card;
+        return false;
     }
 
     private function addAttachments($card, $attachments) {
@@ -110,6 +118,14 @@ class DeckClass {
                 break;
             }
         }
+    }
+
+    private function checkBotPermissions($board) {
+        foreach($board->acl as $acl)
+            if($acl->participant->uid == NC_USER && $acl->permissionEdit)
+                return true;
+
+        return false;
     }
 }
 ?>

@@ -79,8 +79,7 @@ if ($emails)
         $newcard = new DeckClass();
         $response = $newcard->addCard($data, $mailSender, $board);
         $mailSender->userId .= "@{$overview->from[0]->host}";
-        if($response && ASSIGN_SENDER) {
-            $inbox->reply($mailSender->userId, $response);
-        }
+
+        ($response) ? $inbox->reply($mailSender->userId, $response) : $inbox->reply($mailSender->userId);
     }
 ?>
