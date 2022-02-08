@@ -31,10 +31,16 @@ class MailClass {
     }
 
     public function reply($sender, $response = null) {
-        $serverName = parse_url(NC_SERVER);
+        $server = NC_SERVER;
+
+        if(str_contains($server, "https://")) {
+            $server = str_replace('https://', '', $server);
+        } else if(str_contains($server, "http://")) {
+            $server = str_replace('http://', '', $server);
+        }
 
         $headers = array(
-            'From' => 'no-reply@' . $serverName['host'],
+            'From' => 'no-reply@' . $server,
             'MIME-Version' => '1.0',
             'Content-Type' => 'text/html'
         );
