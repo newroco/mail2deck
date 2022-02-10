@@ -62,7 +62,7 @@ if ($emails)
         $board = null;
         if(strstr($overview->to[0]->mailbox, '+')) {
             $board = substr($overview->to[0]->mailbox, strpos($overview->to[0]->mailbox, '+') + 1);
-            if(str_contains($board, '+')) $board = str_replace('+', ' ', $board);
+            if(strstr($board, '+')) $board = str_replace('+', ' ', $board);
         }
         
         $data = new stdClass();

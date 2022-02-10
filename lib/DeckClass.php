@@ -54,13 +54,18 @@ class DeckClass {
                 }
                 $boardId = $board->id;
                 $boardName = $board->title;
+                break;
             }
         }
 
         if($boardId) {
             $stacks = $this->apiCall("GET", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/$boardId/stacks");
-            foreach($stacks as $stack)
-                (strtolower($stack->title) == strtolower($stackFromMail)) ? $stackId = $stack->id : $stackId = $stacks[0]->id;
+            foreach($stacks as $key => $stack)
+                if(strtolower($stack->title) == strtolower($stackFromMail)) {
+                    $stackId = $stack->id;
+                    break;
+                }
+                if($key == array_key_last($stacks) && !isset($stackId)) $stackId = $stacks[0]->id;
         } else {
             return false;
         }

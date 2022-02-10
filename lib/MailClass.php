@@ -33,9 +33,9 @@ class MailClass {
     public function reply($sender, $response = null) {
         $server = NC_SERVER;
 
-        if(str_contains($server, "https://")) {
+        if(strstr($server, "https://")) {
             $server = str_replace('https://', '', $server);
-        } else if(str_contains($server, "http://")) {
+        } else if(strstr($server, "http://")) {
             $server = str_replace('http://', '', $server);
         }
 
