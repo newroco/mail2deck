@@ -50,8 +50,8 @@ This could be any hosted email service. The only requirement is that you can con
 ## Download and install
 If using a self-hosted Postfix server, clone this repository into the home directory of the *incoming* user. If not self-hosting, you may need to create a new user on your system and adjust the commands in future steps to match that username.<br>
 ```
-cd /home/incoming/
-git clone https://github.com/putt1ck/mail2deck.git mail2deck
+su - incoming
+git clone https://github.com/newroco/mail2deck.git mail2deck
 ```
 Edit the config file as you need: 
 ```
