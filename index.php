@@ -68,7 +68,7 @@ if ($emails)
         $data = new stdClass();
         $data->title = DECODE_SPECIAL_CHARACTERS ? mb_decode_mimeheader($overview->subject) : $overview->subject;
         $data->type = "plain";
-        $data->order = 999;
+        $data->order = 1;
         if(count($attachments)) {
             $data->attachments = $attNames;
             $description = DECODE_SPECIAL_CHARACTERS ? quoted_printable_decode($inbox->fetchMessageBody($emails[$j], 1.1)) : $inbox->fetchMessageBody($emails[$j], 1.1);
