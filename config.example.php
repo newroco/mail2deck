@@ -1,5 +1,5 @@
 <?php
-define("NC_SERVER", "localhost"); // server.domain
+define("NC_SERVER", "localhost"); // https://server.domain (without "https://" attachments will not be created)
 define("NC_USER", "deckbot");
 define("NC_PASSWORD", "****");
 define("MAIL_SERVER", "localhost"); // server.domain

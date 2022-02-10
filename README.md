@@ -53,9 +53,11 @@ If using a self-hosted Postfix server, clone this repository into the home direc
 su - incoming
 git clone https://github.com/newroco/mail2deck.git mail2deck
 ```
-Edit the config file as you need: 
+Create config.php file and edit it for your needs: 
 ```
-sudo nano /home/incoming/mail2deck/config.php
+cd /home/incoming/mail2deck
+cp config.example.php config.php
+sudo vim config.php
 ```
 *You can refer to https://www.php.net/manual/en/function.imap-open.php for setting the value of MAIL_SERVER_FLAGS*
 ## Add a cronjob which will run mail2deck.
