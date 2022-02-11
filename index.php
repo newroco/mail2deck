@@ -75,6 +75,8 @@ if ($emails)
         } else {
             $description = DECODE_SPECIAL_CHARACTERS ? quoted_printable_decode($inbox->fetchMessageBody($emails[$j], 1)) : $inbox->fetchMessageBody($emails[$j], 1);
         }
+        if(base64_encode(base64_decode($description)) == $description) // if description is base64 encoded, decode it
+            $description = base64_decode($description);
         $data->description = $description;
         $mailSender = new stdClass();
         $mailSender->userId = $overview->from[0]->mailbox;
