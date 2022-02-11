@@ -1,7 +1,6 @@
 <?php
 error_reporting(E_ERROR | E_PARSE);
 require_once("config.php");
-require_once("functions.php");
 require_once('lib/DeckClass.php');
 require_once('lib/MailClass.php');
 
@@ -11,6 +10,10 @@ $emails = $inbox->getNewMessages();
 if ($emails)
     for ($j = 0; $j < count($emails) && $j < 5; $j++) {
         $structure = $inbox->fetchMessageStructure($emails[$j]);
+        $base64encode = false;
+        if($structure->encoding == 3) {
+            $base64encode = true; // BASE64
+        }
         $attachments = array();
         $attNames = array();
         if (isset($structure->parts) && count($structure->parts)) {
@@ -76,7 +79,9 @@ if ($emails)
         } else {
             $description = DECODE_SPECIAL_CHARACTERS ? quoted_printable_decode($inbox->fetchMessageBody($emails[$j], 1)) : $inbox->fetchMessageBody($emails[$j], 1);
         }
-        $description = decodeIfNeeded($description);
+        if($base64encode) {
+            $description = base64_decode($description);
+        }
         $data->description = $description;
         $mailSender = new stdClass();
         $mailSender->userId = $overview->from[0]->mailbox;
