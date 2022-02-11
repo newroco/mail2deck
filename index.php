@@ -1,6 +1,7 @@
 <?php
 error_reporting(E_ERROR | E_PARSE);
 require_once("config.php");
+require_once("functions.php");
 require_once('lib/DeckClass.php');
 require_once('lib/MailClass.php');
 
@@ -75,8 +76,7 @@ if ($emails)
         } else {
             $description = DECODE_SPECIAL_CHARACTERS ? quoted_printable_decode($inbox->fetchMessageBody($emails[$j], 1)) : $inbox->fetchMessageBody($emails[$j], 1);
         }
-        if(base64_encode(base64_decode($description)) == $description) // if description is base64 encoded, decode it
-            $description = base64_decode($description);
+        $description = decodeIfNeeded($description);
         $data->description = $description;
         $mailSender = new stdClass();
         $mailSender->userId = $overview->from[0]->mailbox;
