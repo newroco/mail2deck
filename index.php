@@ -84,11 +84,11 @@ if ($emails)
         }
         $data->description = $description;
         $mailSender = new stdClass();
-        $mailSender->userId = $overview->from[0]->mailbox;
+        $mailSender->userId = $overview->reply_to[0]->mailbox;
 
         $newcard = new DeckClass();
         $response = $newcard->addCard($data, $mailSender, $board);
-        $mailSender->userId .= "@{$overview->from[0]->host}";
+        $mailSender->userId .= "@{$overview->reply_to[0]->host}";
 
         if($response) {
             $inbox->reply($mailSender->userId, $response);
