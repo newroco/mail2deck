@@ -90,10 +90,14 @@ if ($emails)
         $response = $newcard->addCard($data, $mailSender, $board);
         $mailSender->userId .= "@{$overview->reply_to[0]->host}";
 
-        if($response) {
-            $inbox->reply($mailSender->userId, $response);
-        } else {
-            $inbox->reply($mailSender->userId);
+        if(MAIL_NOTIFICATION) {
+            if($response) {
+                $inbox->reply($mailSender->userId, $response);
+            } else {
+                $inbox->reply($mailSender->userId);
+            }
+        }
+        if(!$response) {
             foreach($attNames as $attachment) unlink(getcwd() . "/attachments/" . $attachment);
         }
     }
