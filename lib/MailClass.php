@@ -46,8 +46,8 @@ class MailClass {
         );
 
         if($response) {
-            $body = "<h1>You created a new issue on board {$response->boardTitle}.</h1><p>Check out this <a href=\"" . NC_SERVER . "/index.php/apps/deck/#/board/{$response->board}/card/{$response->id}" . "\">link</a> to see your newly created card.</p>";
-            $subject = 'An issue has been reported!';
+            $body = "<h1>You created a new card on board {$response->boardTitle}.</h1><p>Check out this <a href=\"" . NC_SERVER . "index.php/apps/deck/#/board/{$response->board}/card/{$response->id}" . "\">link</a> to see your newly created card.</p>";
+            $subject = 'An new card has been created!';
         } else {
             $body = "<h1>There was a problem creating your new card.</h1><p>Make sure you set up the board correctly.</p>";
             $subject = "Your issue has not been reported!";
