@@ -1,8 +1,10 @@
 <?php
 error_reporting(E_ERROR | E_PARSE);
+require __DIR__ . '/vendor/autoload.php';
 require_once("config.php");
 require_once('lib/DeckClass.php');
 require_once('lib/MailClass.php');
+require_once('lib/ConvertToMD.php');
 
 $inbox = new MailClass();
 $emails = $inbox->getNewMessages();
@@ -64,11 +66,16 @@ if ($emails)
 
         $overview = $inbox->headerInfo($emails[$j]);
         $board = null;
-        if(strstr($overview->to[0]->mailbox, '+')) {
-            $board = substr($overview->to[0]->mailbox, strpos($overview->to[0]->mailbox, '+') + 1);
-            if(strstr($board, '+')) $board = str_replace('+', ' ', $board);
-        }
-        
+        if(isset($overview->{'X-Original-To'}) && strstr($overview->{'X-Original-To'}, '+')) {
+            $board = strstr(substr($overview->{'X-Original-To'}, strpos($overview->{'X-Original-To'}, '+') + 1), '@', true);
+        } else {
+            if(strstr($overview->to[0]->mailbox, '+')) {
+                $board = substr($overview->to[0]->mailbox, strpos($overview->to[0]->mailbox, '+') + 1);
+            }
+        };
+
+        if(strstr($board, '+')) $board = str_replace('+', ' ', $board);
+
         $data = new stdClass();
         $data->title = DECODE_SPECIAL_CHARACTERS ? mb_decode_mimeheader($overview->subject) : $overview->subject;
         $data->type = "plain";
@@ -82,6 +89,7 @@ if ($emails)
         if($base64encode) {
             $description = base64_decode($description);
         }
+        $description = (new ConvertToMD($description))->execute();
         $data->description = $description;
         $mailSender = new stdClass();
         $mailSender->userId = $overview->reply_to[0]->mailbox;

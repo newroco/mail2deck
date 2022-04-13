@@ -47,6 +47,7 @@ class DeckClass {
         }
 
         $boards = $this->apiCall("GET", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards");
+        $boardId = $boardName = null;
         foreach($boards as $board) {
             if(strtolower($board->title) == strtolower($boardFromMail)) {
                 if(!$this->checkBotPermissions($board)) {

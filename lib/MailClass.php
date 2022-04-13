@@ -27,7 +27,21 @@ class MailClass {
     }
 
     public function headerInfo($email) {
-        return imap_headerinfo($this->inbox, $email);
+        $headerInfo = imap_headerinfo($this->inbox, $email);
+        $additionalHeaderInfo = imap_fetchheader($this->inbox, $email);
+        $infos = explode("\n", $additionalHeaderInfo);
+
+        foreach($infos as $info) {
+            $data = explode(":", $info);
+            if( count($data) == 2 && !isset($head[$data[0]])) {
+                if(trim($data[0]) === 'X-Original-To') {
+                    $headerInfo->{'X-Original-To'} = trim($data[1]);
+                    break;
+                }
+            }
+        }
+
+        return $headerInfo;
     }
 
     public function reply($sender, $response = null) {
