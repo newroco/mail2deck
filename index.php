@@ -89,7 +89,9 @@ if ($emails)
         if($base64encode) {
             $description = base64_decode($description);
         }
-        $description = (new ConvertToMD($description))->execute();
+        if($description != strip_tags($description)) {
+            $description = (new ConvertToMD($description))->execute();
+        }
         $data->description = $description;
         $mailSender = new stdClass();
         $mailSender->userId = $overview->reply_to[0]->mailbox;
