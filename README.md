@@ -50,6 +50,7 @@ sudo postconf -e "recipient_delimiter = +"
 This could be any hosted email service. The only requirement is that you can connect to it via the IMAP protocol.
 *Please note this option may not be as flexible as a self-hosted server. For example your email service may not support the "+"delimiter for directing messages to a specific board.*
 ## Download and install
+### Bare-metal installation
 If using a self-hosted Postfix server, clone this repository into the home directory of the *incoming* user. If not self-hosting, you may need to create a new user on your system and adjust the commands in future steps to match that username.<br>
 ```
 su - incoming
@@ -62,12 +63,41 @@ cp config.example.php config.php
 sudo vim config.php
 ```
 *You can refer to https://www.php.net/manual/en/function.imap-open.php for setting the value of MAIL_SERVER_FLAGS*
-## Add a cronjob which will run mail2deck.
+#### Add a cronjob which will run mail2deck.
 ```
 sudo crontab -u incoming -e
 ```
 Add the following line in the opened file:
 <code>*/5 * * * * /usr/bin/php /home/incoming/mail2deck/index.php >/dev/null 2>&1</code>
+
+### Docker installation
+Clone and edit the config.example.php you find in this repository and move it as config.php
+```
+git clone https://github.com/newroco/mail2deck.git mail2deck
+cd mail2deck
+cp config.example.php config.php
+nano config.php
+```
+
+Build your image locally
+```
+docker build -t mail2deck:latest .
+```
+
+Run the docker image mapping the config.json as volume
+```
+docker run -d --name mail2deck mail2deck:latest
+```
+
+Edit your crontab
+```
+crontab -e
+```
+
+And add this line
+```
+*/5 * * * *  /usr/bin/docker start mail2deck
+```
 
 ## Finish
 Now __mail2deck__ will add new cards every five minutes if new emails are received.
