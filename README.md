@@ -34,6 +34,15 @@ Note:
 * Email content will be card description
 * You can add attachments in the email and those will be integrated in the created card
 
+
+## 3) Specify assignee
+
+Here's how the email subject should look like:
+`Update website logo b-'website' s-'to do' u-'bob'</code>`
+
+* *You can use single or double quotes.*
+* *Case-insensitive for board, stack and user respectively.*
+
 # ⚙️ B. For NextCloud admins to setup
 ## Requirements
 This app requires php-curl, php-mbstring ,php-imap and some sort of imap server (e.g. Postfix with Courier).
