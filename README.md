@@ -35,10 +35,11 @@ Note:
 * You can add attachments in the email and those will be integrated in the created card
 
 
-## 3) Specify assignee
+### 2.3: Specify assignee
 
 Here's how the email subject should look like:
-`Update website logo b-'website' s-'to do' u-'bob'</code>`
+
+`Update website logo b-'website' s-'to do' u-'bob'`
 
 * *You can use single or double quotes.*
 * *Case-insensitive for board, stack and user respectively.*
