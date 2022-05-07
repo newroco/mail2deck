@@ -94,10 +94,10 @@ class DeckClass {
             $card->board = $params->board;
             $card->stack = $params->stack;
 
-            if ($params->userId !== null) $user->userId = $params->userId;
+            if ($params->userId) $user->userId = $params->userId;
 
             if($this->responseCode == 200) {
-                if(ASSIGN_SENDER || $params->userId !== null) $this->assignUser($card, $user);
+                if(ASSIGN_SENDER || $params->userId) $this->assignUser($card, $user);
                 if($data->attachments) $this->addAttachments($card, $data->attachments);
                 $card->boardTitle = $params->boardTitle;
             } else {
