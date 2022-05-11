@@ -102,13 +102,13 @@ if ($emails)
 
         $newcard = new DeckClass();
         $response = $newcard->addCard($data, $mailSender, $board);
-        $mailSender->userId .= "@{$overview->reply_to[0]->host}";
+        $mailSender->origin .= "{$overview->reply_to[0]->mailbox}@{$overview->reply_to[0]->host}";
 
         if(MAIL_NOTIFICATION) {
             if($response) {
-                $inbox->reply($mailSender->userId, $response);
+                $inbox->reply($mailSender->origin, $response);
             } else {
-                $inbox->reply($mailSender->userId);
+                $inbox->reply($mailSender->origin);
             }
         }
         if(!$response) {
