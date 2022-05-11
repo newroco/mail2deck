@@ -1,117 +1,137 @@
 <?php
 
 class DeckClass {
-    protected function apiCall($request, $endpoint, $data){
-        $curl = curl_init();
+    private $responseCode;
 
-        $headers = [
-            "OCS-APIRequest: true"
-				];
-				
-				// set CURLOPTs commmon to all HTTP methods
-				$options = [
-					  CURLOPT_USERPWD => NC_USER . ":" . NC_PASSWORD,
+    private function apiCall($request, $endpoint, $data = null, $attachment = false){
+        $curl = curl_init();
+        if($data && !$attachment) {
+            $endpoint .= '?' . http_build_query($data);
+        }
+        curl_setopt_array($curl, array(
             CURLOPT_URL => $endpoint,
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_SSLVERSION => "all",
-				];
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => $request,
+            CURLOPT_HTTPHEADER => array(
+                'Authorization: Basic ' . base64_encode(NC_USER . ':' . NC_PASSWORD),
+                'OCS-APIRequest: true',
+            ),
+        ));
 
-				// set HTTP request specific headers and options/data
-				if ($request == '') {// an empty request value is used for attachments
-					// add data without JSON encoding or JSON Content-Type header
-					$options[CURLOPT_POST] = true;
-					$options[CURLOPT_POSTFIELDS] = $data;
-				} elseif ($request == "POST") {
-					array_push($headers, "Content-Type: application/json");
-					$options[CURLOPT_POST] = true;
-					$options[CURLOPT_POSTFIELDS] = json_encode($data);
-				}	elseif ($request == "GET") {
-					array_push($headers, "Content-Type: application/json");
-				}
-
-				// add headers to options
-				$options[CURLOPT_HTTPHEADER] = $headers;
-        curl_setopt_array($curl, $options);
+        if($request === 'POST') curl_setopt($curl, CURLOPT_POSTFIELDS, (array) $data);
 
         $response = curl_exec($curl);
         $err = curl_error($curl);
+        $this->responseCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
 
         curl_close($curl);
-
-        if ($err) {
-            echo "cURL Error #:" . $err;
-        }
+        if($err) echo "cURL Error #:" . $err;
 
         return json_decode($response);
     }
 
-    public function getParameters() {// get the board and the stack
-        global $mailData;
-        global $boardId;
-
-        if(preg_match('/b-"([^"]+)"/', $mailData->mailSubject, $m) || preg_match("/b-'([^']+)'/", $mailData->mailSubject, $m)) {
-            $boardFromMail = $m[1];
-            $mailData->mailSubject = str_replace($m[0], '', $mailData->mailSubject);
-        }
-        if(preg_match('/s-"([^"]+)"/', $mailData->mailSubject, $m) || preg_match("/s-'([^']+)'/", $mailData->mailSubject, $m)) {
+    public function getParameters($params, $boardFromMail = null) {// get the board and the stack
+	    if(!$boardFromMail) // if board is not set within the email address, look for board into email subject
+        	if(preg_match('/b-"([^"]+)"/', $params, $m) || preg_match("/b-'([^']+)'/", $params, $m)) {
+            		$boardFromMail = $m[1];
+            		$params = str_replace($m[0], '', $params);
+        	}
+        if(preg_match('/s-"([^"]+)"/', $params, $m) || preg_match("/s-'([^']+)'/", $params, $m)) {
             $stackFromMail = $m[1];
-            $mailData->mailSubject = str_replace($m[0], '', $mailData->mailSubject);
+            $params = str_replace($m[0], '', $params);
         }
 
-        global $boardName;
-        $boards = $this->apiCall("GET", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards", '');
+        $boards = $this->apiCall("GET", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards");
+        $boardId = $boardName = null;
         foreach($boards as $board) {
-            if($board->title == $boardFromMail || $board->title == $boardName) {
+            if(strtolower($board->title) == strtolower($boardFromMail)) {
+                if(!$this->checkBotPermissions($board)) {
+                    return false;
+                }
                 $boardId = $board->id;
+                $boardName = $board->title;
+                break;
+            }
+        }
+
+        if($boardId) {
+            $stacks = $this->apiCall("GET", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/$boardId/stacks");
+            foreach($stacks as $key => $stack)
+                if(strtolower($stack->title) == strtolower($stackFromMail)) {
+                    $stackId = $stack->id;
+                    break;
+                }
+                if($key == array_key_last($stacks) && !isset($stackId)) $stackId = $stacks[0]->id;
+        } else {
+            return false;
+        }
+
+        $boardStack = new stdClass();
+        $boardStack->board = $boardId;
+        $boardStack->stack = $stackId;
+        $boardStack->newTitle = $params;
+        $boardStack->boardTitle = $boardName;
+
+        return $boardStack;
+    }
+
+    public function addCard($data, $user, $board = null) {
+        $params = $this->getParameters($data->title, $board);
+
+        if($params) {
+            $data->title = $params->newTitle;
+            $card = $this->apiCall("POST", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/{$params->board}/stacks/{$params->stack}/cards", $data);
+            $card->board = $params->board;
+            $card->stack = $params->stack;
+    
+            if($this->responseCode == 200) {
+                if(ASSIGN_SENDER) $this->assignUser($card, $user);
+                if($data->attachments) $this->addAttachments($card, $data->attachments);
+                $card->boardTitle = $params->boardTitle;
             } else {
-                echo "Board not found\n";
+                return false;
             }
+            return $card;
         }
-
-        $stacks = $this->apiCall("GET", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/$boardId/stacks", '');
-        foreach($stacks as $stack) {
-            if($stack->title == $stackFromMail) {
-                global $stackId;
-                $stackId = $stack->id;
-            } else if (!is_numeric($stackId)) {
-                global $stackId;
-                $stackId = $stacks[0]->id;
-            }
-        }
+        return false;
     }
 
-    public function addCard($data) {
-        global $mailData;
-        global $stackId;
-
-        $data = new stdClass();
-        $data->stackId = $stackId;
-        $data->title = $mailData->mailSubject;
-        $data->description =
-"$mailData->mailMessage
-***
-### $mailData->from
-";
-        $data->type = "plain";
-        $data->order = "-" . time(); // put the card to the top
-
-        //create card
-        $response = $this->apiCall("POST", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/1/stacks/1/cards", $data);
-        global $cardId;
-        $cardId = $response->id;
-    }
-
-    public function addAttachment($data) {
-        global $mailData;
-        global $cardId;
-        $fullPath = getcwd() . "/attachments/"; //get full path to attachments dirctory
-
-        for ($i = 1; $i < count($mailData->fileAttached); $i++) {
+    private function addAttachments($card, $attachments) {
+        $fullPath = getcwd() . "/attachments/"; //get full path to attachments directory
+        for ($i = 0; $i < count($attachments); $i++) {
+            $file = $fullPath . $attachments[$i];
             $data = array(
-                'file' => new CURLFile($fullPath . $mailData->fileAttached[$i])
-              );
-            $this->apiCall("", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/1/stacks/1/cards/$cardId/attachments?type=deck_file", $data);
+                'file' => new CURLFile($file)
+            );
+            $this->apiCall("POST", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/{$card->board}/stacks/{$card->stack}/cards/{$card->id}/attachments?type=file", $data, true);
+            unlink($file);
         }
+    }
+
+    public function assignUser($card, $mailUser)
+    {
+        $board = $this->apiCall("GET", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/{$card->board}");
+        $boardUsers = array_map(function ($user) { return $user->uid; }, $board->users);
+
+        foreach($boardUsers as $user) {
+            if($user === $mailUser->userId) {
+                $this->apiCall("PUT", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/{$card->board}/stacks/{$card->stack}/cards/{$card->id}/assignUser", $mailUser);
+                break;
+            }
+        }
+    }
+
+    private function checkBotPermissions($board) {
+        foreach($board->acl as $acl)
+            if($acl->participant->uid == NC_USER && $acl->permissionEdit)
+                return true;
+
+        return false;
     }
 }
 ?>
