@@ -80,11 +80,15 @@ if ($emails)
         $data->title = DECODE_SPECIAL_CHARACTERS ? mb_decode_mimeheader($overview->subject) : $overview->subject;
         $data->type = "plain";
         $data->order = -time();
+        $body = $inbox->fetchMessageBody($emails[$j], 1.1);
+        if ($body == "") {
+            $body = $inbox->fetchMessageBody($emails[$j], 1);
+        }
         if(count($attachments)) {
             $data->attachments = $attNames;
-            $description = DECODE_SPECIAL_CHARACTERS ? quoted_printable_decode($inbox->fetchMessageBody($emails[$j], 1.1)) : $inbox->fetchMessageBody($emails[$j], 1.1);
+            $description = DECODE_SPECIAL_CHARACTERS ? quoted_printable_decode($body) : $body;
         } else {
-            $description = DECODE_SPECIAL_CHARACTERS ? quoted_printable_decode($inbox->fetchMessageBody($emails[$j], 1)) : $inbox->fetchMessageBody($emails[$j], 1);
+            $description = DECODE_SPECIAL_CHARACTERS ? quoted_printable_decode($body) : $body;
         }
         if($base64encode) {
             $description = base64_decode($description);
