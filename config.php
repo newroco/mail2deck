@@ -1,5 +1,5 @@
 <?php
-define("NC_SERVER", ""); // server.domain
+define("NC_SERVER", ""); // server.domain (specify protocol such as http or https!)
 define("NC_USER", "deckbot");
 define("NC_PASSWORD", "");
 define("MAIL_SERVER", ""); // server.domain
