@@ -60,15 +60,17 @@ class MailClass {
         );
 
         if($response) {
-            $body = "<h1>You created a new card on board {$response->boardTitle}.</h1><p>Check out this <a href=\"" . NC_SERVER . "index.php/apps/deck/#/board/{$response->board}/card/{$response->id}" . "\">link</a> to see your newly created card.</p>";
-            $subject = 'An new card has been created!';
+            $body = "<h1>A new card has been created on board <a href=\"" . NC_SERVER . "index.php/apps/deck/#/board/{$response->board}" . "\">{$response->boardTitle}</a>.</h1>
+                    <p>Check out this <a href=\"" . NC_SERVER . "index.php/apps/deck/#/board/{$response->board}/card/{$response->id}" . "\">link</a> to see the newly created card.</p>
+                    <p>Card ID is {$response->id}</p>";
+            $subject = 'A new card has been created!';
         } else {
-            $body = "<h1>There was a problem creating your new card.</h1><p>Make sure you set up the board correctly.</p>";
-            $subject = "Your issue has not been reported!";
+            $body = "<h1>There was a problem creating a new card.</h1><p>Make sure the board was setup correctly.</p>";
+            $subject = "A new card could not be created!";
         }
 
         $message = "<html>";
-        $message .= "<head><title>Mail2Deck response</title></head>";
+        $message .= "<head><title>mail2deck response</title></head>";
         $message .= "<body>$body</body>";
         $message .= "</html>";
 
