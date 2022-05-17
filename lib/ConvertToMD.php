@@ -1,5 +1,7 @@
 <?php
 
+namespace Mail2Deck;
+
 use League\HTMLToMarkdown\HtmlConverter;
 
 class ConvertToMD {
@@ -18,5 +20,3 @@ class ConvertToMD {
         return $this->converter->convert($this->html);
     }
 }
-
-?>

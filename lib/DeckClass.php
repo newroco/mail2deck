@@ -1,5 +1,10 @@
 <?php
 
+namespace Mail2Deck;
+
+use stdClass;
+use CURLFile;
+
 class DeckClass {
     private $responseCode;
 
@@ -141,4 +146,3 @@ class DeckClass {
         return false;
     }
 }
-?>

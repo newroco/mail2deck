@@ -1,5 +1,7 @@
 <?php
 
+namespace Mail2Deck;
+
 class MailClass {
     private $inbox;
 
@@ -60,8 +62,8 @@ class MailClass {
         );
 
         if($response) {
-            $body = "<h1>A new card has been created on board <a href=\"" . NC_SERVER . "index.php/apps/deck/#/board/{$response->board}" . "\">{$response->boardTitle}</a>.</h1>
-                    <p>Check out this <a href=\"" . NC_SERVER . "index.php/apps/deck/#/board/{$response->board}/card/{$response->id}" . "\">link</a> to see the newly created card.</p>
+            $body = "<h1>A new card has been created on board <a href=\"" . NC_SERVER . "/index.php/apps/deck/#/board/{$response->board}" . "\">{$response->boardTitle}</a>.</h1>
+                    <p>Check out this <a href=\"" . NC_SERVER . "/index.php/apps/deck/#/board/{$response->board}/card/{$response->id}" . "\">link</a> to see the newly created card.</p>
                     <p>Card ID is {$response->id}</p>";
             $subject = 'A new card has been created!';
         } else {
@@ -75,5 +77,18 @@ class MailClass {
         $message .= "</html>";
 
         mail($sender, $subject, $message, $headers);
+    }
+
+    /**
+     * Deletes a mail
+     * 
+     * @param $email email id that you want to delete
+     * 
+     * @return void
+     */
+    public function delete(int $email)
+    {
+        imap_delete($this->inbox, $email);
+        imap_expunge($this->inbox);
     }
 }
