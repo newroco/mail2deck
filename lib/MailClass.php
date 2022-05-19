@@ -80,15 +80,22 @@ class MailClass {
     }
 
     /**
-     * Deletes a mail
+     * Mark emails for deletion
      * 
-     * @param $email email id that you want to delete
+     * @param $email email number that you want to delete
      * 
      * @return void
      */
     public function delete(int $email)
     {
-        imap_delete($this->inbox, $email);
+        imap_delete($this->inbox, imap_uid($this->inbox, $email), FT_UID);
+    }
+
+    /**
+     * Delete all messages marked for deletion
+     */
+    public function expunge()
+    {
         imap_expunge($this->inbox);
     }
 }

@@ -10,7 +10,11 @@ use Mail2Deck\ConvertToMD;
 $inbox = new MailClass();
 $emails = $inbox->getNewMessages();
 
-if(!$emails) return; // nothing to do
+if(!$emails) {
+    // delete all messages marked for deletion and return
+    $inbox->expunge();
+    return;
+}
 
 for ($j = 0; $j < count($emails) && $j < 5; $j++) {
     $structure = $inbox->fetchMessageStructure($emails[$j]);
