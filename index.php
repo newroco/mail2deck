@@ -1,7 +1,7 @@
 <?php
 error_reporting(E_ERROR | E_PARSE);
-require __DIR__ . '/vendor/autoload.php';
-require_once("config.php");
+require_once(__DIR__ . '/vendor/autoload.php');
+require_once(__DIR__ . '/config.php');
 
 use Mail2Deck\MailClass;
 use Mail2Deck\DeckClass;

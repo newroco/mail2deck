@@ -2,9 +2,6 @@
 
 namespace Mail2Deck;
 
-use stdClass;
-use CURLFile;
-
 class DeckClass {
     private $responseCode;
 
@@ -80,7 +77,7 @@ class DeckClass {
             return false;
         }
 
-        $boardStack = new stdClass();
+        $boardStack = new \stdClass();
         $boardStack->board = $boardId;
         $boardStack->stack = $stackId;
         $boardStack->newTitle = $params;
@@ -118,7 +115,7 @@ class DeckClass {
         for ($i = 0; $i < count($attachments); $i++) {
             $file = $fullPath . $attachments[$i];
             $data = array(
-                'file' => new CURLFile($file)
+                'file' => new \CURLFile($file)
             );
             $this->apiCall("POST", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/{$card->board}/stacks/{$card->stack}/cards/{$card->id}/attachments?type=file", $data, true);
             unlink($file);
