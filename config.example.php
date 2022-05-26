@@ -1,7 +1,7 @@
 <?php
 define("NC_SERVER", "localhost"); // https://server.domain (without "https://" attachments will not be created)
 define("NC_USER", "deckbot");
-define("NC_PASSWORD", "****");
+define("NC_PASSWORD", "****"); // if your Nextcloud instance uses Two-Factor-Authentication, use generated token here instead of password.
 define("MAIL_SERVER", "localhost"); // server.domain
 define("MAIL_SERVER_FLAGS", "/novalidate-cert"); // flags needed to connect to server. Refer to https://www.php.net/manual/en/function.imap-open.php for a list of valid flags.
 define("MAIL_SERVER_PORT", "143");
@@ -12,4 +12,3 @@ define("DECODE_SPECIAL_CHARACTERS", true); //requires mbstring, if false special
 define("ASSIGN_SENDER", true); // if true, sender will be assigned to card if has NC account
 define("MAIL_NOTIFICATION", true); // if true, send notifications when a new card was created or an error occured
 define("DELETE_MAIL_AFTER_PROCESSING", true);
-?>
