@@ -51,6 +51,10 @@ class DeckClass {
             $userFromMail = $m[1];
             $params = str_replace($m[0], '', $params);
         }
+        if(preg_match('/d-"([^"]+)"/', $params, $m) || preg_match("/d-'([^']+)'/", $params, $m)) {
+            $duedateFromMail = $m[1];
+            $params = str_replace($m[0], '', $params);
+        }
 
         $boards = $this->apiCall("GET", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards");
         $boardId = $boardName = null;
@@ -83,6 +87,7 @@ class DeckClass {
         $boardStack->newTitle = $params;
         $boardStack->boardTitle = $boardName;
         $boardStack->userId = $userFromMail;
+        $boardStack->dueDate = $duedateFromMail;
 
         return $boardStack;
     }
@@ -92,12 +97,13 @@ class DeckClass {
 
         if($params) {
             $data->title = $params->newTitle;
+            $data->duedate = $params->dueDate;
             $card = $this->apiCall("POST", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/{$params->board}/stacks/{$params->stack}/cards", $data);
             $card->board = $params->board;
             $card->stack = $params->stack;
 
             if ($params->userId) $user->userId = $params->userId;
-
+            
             if($this->responseCode == 200) {
                 if(ASSIGN_SENDER || $params->userId) $this->assignUser($card, $user);
                 if($data->attachments) $this->addAttachments($card, $data->attachments);
