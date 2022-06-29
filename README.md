@@ -44,6 +44,14 @@ Here's how the email subject should look like:
 * *You can use single or double quotes.*
 * *Case-insensitive for board, stack and user respectively.*
 
+### 2.4: Specify due date
+You can use the optional parameter `d-` to add a due date to a card.
+Here's how the email subject should look like if you want to set a due date to the card:
+
+`Update website logo b-'website' s-'to do' u-'bob' d-'2022-08-22T19:29:30+00:00'`
+
+* *You can use single or double quotes.*
+
 # ⚙️ B. For NextCloud admins to setup
 ## Requirements
 This app requires php-curl, php-mbstring ,php-imap and some sort of imap server (e.g. Postfix with Courier).
