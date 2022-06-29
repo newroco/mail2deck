@@ -56,11 +56,11 @@ Here's how the email subject should look like if you want to set a due date to t
 ## Requirements
 This app requires php-curl, php-mbstring ,php-imap and some sort of imap server (e.g. Postfix with Courier).
 ## NC new user
-Create a new user from User Management on your NC server, which will have to function as a bot. We chose to call him *deckbot*, but you can call it however you want.<br>
-__Note__: that you have to assign *deckbot* on each board you want to add new cards from email.
+Create a new user from User Management on your NC server, which shall to function as a bot to post cards received as mail. We chose to call it *deckbot*, but you can call it whatever you want.<br>
+__Note__: that you have to give *deckbot* permissions on each board you want to add new cards from email.
 ## Configure Email
 ### Option 1 - Set up Postfix for incoming email
-You can setup Posfix mail server folowing the instructions on [Posfix setup](https://docs.gitlab.com/ee/administration/reply_by_email_postfix_setup.html), and after that add "+" delimiter (which separe the user from the board in the email address) using the command:<br>
+You can setup Posfix mail server folowing the instructions on [Posfix setup](https://docs.gitlab.com/ee/administration/reply_by_email_postfix_setup.html), and after that add "+" delimiter (which separates the user from the board name in the email address) using the command:<br>
 ```
 sudo postconf -e "recipient_delimiter = +"
 ```
@@ -81,11 +81,11 @@ cp config.example.php config.php
 sudo vim config.php
 ```
 *You can refer to https://www.php.net/manual/en/function.imap-open.php for setting the value of MAIL_SERVER_FLAGS*
-#### Add a cronjob which will run mail2deck.
+#### Add a cronjob to run mail2deck.
 ```
 sudo crontab -u incoming -e
 ```
-Add the following line in the opened file:
+Add the following line in the opened file (in this example, it runs every 5 minutes):
 <code>*/5 * * * * /usr/bin/php /home/incoming/mail2deck/index.php >/dev/null 2>&1</code>
 
 ### Docker installation
