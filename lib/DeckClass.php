@@ -86,8 +86,9 @@ class DeckClass {
         $boardStack->stack = $stackId;
         $boardStack->newTitle = $params;
         $boardStack->boardTitle = $boardName;
-        $boardStack->userId = $userFromMail;
+        $boardStack->userId = strtolower($userFromMail);
         $boardStack->dueDate = $duedateFromMail;
+
 
         return $boardStack;
     }
