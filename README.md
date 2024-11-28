@@ -14,7 +14,7 @@ Let's assume you want to add a card with title "Update website logo" on board "W
 You can do this in two ways.
 
 ### 2.1: Set stack and board in the email subject
-Here's how the email subject should look like:
+Here's what the email subject should look like:
 <code>Update website logo b-'website' s-'to do'</code>
 
 * *You can use single or double quotes.*
@@ -37,7 +37,7 @@ Note:
 
 ### 2.3: Specify assignee
 
-Here's how the email subject should look like:
+Here's what the email subject should look like:
 
 `Update website logo b-'website' s-'to do' u-'bob'`
 
@@ -46,7 +46,7 @@ Here's how the email subject should look like:
 
 ### 2.4: Specify due date
 You can use the optional parameter `d-` to add a due date to a card.
-Here's how the email subject should look like if you want to set a due date to the card:
+Here's what the email subject should look like if you want to set a due date to the card:
 
 `Update website logo b-'website' s-'to do' u-'bob' d-'2022-08-22T19:29:30+00:00'`
 
