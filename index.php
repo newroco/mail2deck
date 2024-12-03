@@ -22,6 +22,19 @@ for ($j = 0; $j < count($emails) && $j < 5; $j++) {
     if($structure->encoding == 3) {
         $base64encode = true; // BASE64
     }
+    if( isset($structure->parts) && 
+        isset($structure->parts[0]) && 
+        $structure->parts[0]->encoding == 3) {
+        $base64encode = true; // BASE64
+    }
+    if(isset($structure->parts) && 
+        isset($structure->parts[0]) && 
+        isset($structure->parts[0]->parts) && 
+        isset($structure->parts[0]->parts[0]) && 
+        $structure->parts[0]->parts[0]->encoding == 3) {
+       // this handles parts with inline attachments
+        $base64encode = true; // BASE64
+    }
     $attachments = array();
     $attNames = array();
     if (isset($structure->parts) && count($structure->parts)) {
