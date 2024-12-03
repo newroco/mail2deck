@@ -6,6 +6,7 @@ use League\HTMLToMarkdown\HtmlConverter;
 
 class ConvertToMD {
     protected $html;
+    protected $converter;
 
     public function __construct($html) {
         $this->converter = new HtmlConverter([
