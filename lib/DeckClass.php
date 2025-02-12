@@ -8,7 +8,21 @@ class DeckClass {
     private function apiCall($request, $endpoint, $data = null, $attachment = false, $userapi = false){
         $curl = curl_init();
         if($data && !$attachment) {
-            $endpoint .= '?' . http_build_query($data);
+            if ($request === "PUT") {
+                if (is_array($data) || is_object($data)) {
+                    $jsonData = json_encode($data);
+                } else {
+                    $jsonData = $data;
+                }
+
+                curl_setopt($curl, CURLOPT_POSTFIELDS, $jsonData);
+                curl_setopt($curl, CURLOPT_HTTPHEADER, [
+                    'Content-Type: application/json',
+                    'Content-Length: ' . strlen($jsonData)
+                ]);
+            } else {
+                $endpoint .= '?' . http_build_query($data);
+            }
         }
         curl_setopt_array($curl, array(
             CURLOPT_URL => $endpoint,
@@ -27,15 +41,28 @@ class DeckClass {
         ));
 
         if ($request === 'POST') {
-            curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($data));
-            curl_setopt($curl, CURLOPT_HTTPHEADER, array_merge(
-                array(
-                    'Accept: application/json',
-                    'OCS-APIRequest: true',
-                    'Content-Type:  application/json',
-                    'Authorization: Basic ' . base64_encode(NC_ADMIN_USER . ':' . NC_ADMIN_PASSWORD),
-                )
-            ));
+            if ($attachment){
+                curl_setopt($curl, CURLOPT_POST, true);
+                curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
+                curl_setopt($curl, CURLOPT_HTTPHEADER, array_merge(
+                    array(
+                        'Accept: application/json',
+                        'Content-Type: multipart/form-data',
+                        'Authorization: Basic ' . base64_encode(NC_USER . ':' . NC_PASSWORD),
+                    )
+                ));
+                curl_setopt($curl, CURLOPT_USERPWD, NC_USER . ":" . NC_PASSWORD);
+            }else{
+                curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($data));
+                curl_setopt($curl, CURLOPT_HTTPHEADER, array_merge(
+                    array(
+                        'Accept: application/json',
+                        'OCS-APIRequest: true',
+                        'Content-Type:  application/json',
+                        'Authorization: Basic ' . base64_encode(NC_USER . ':' . NC_PASSWORD),
+                    )
+                ));
+            }
         }
 
         $response = curl_exec($curl);
@@ -49,13 +76,20 @@ class DeckClass {
         return json_decode($response);
     }
 
-    public function getParameters($params, $boardFromMail = null) {// get the board and the stack
+    public function getParameters($params, $boardFromMail = null, $mail_domain) {// get the board and the stack
 	    if(!$boardFromMail) // if board is not set within the email address, look for board into email subject
         	if(preg_match('/b-"([^"]+)"/', $params, $m) || preg_match("/b-'([^']+)'/", $params, $m)) {
             		$boardFromMail = $m[1];
             		$params = str_replace($m[0], '', $params);
         	}else{
-                $boardFromMail = NC_DEFAULT_BOARD;
+                $emailSenderDomain = '@'.$mail_domain;
+                if($emailSenderDomain === SUBMITTER_ADDRESS["DOMAIN_OA"]){
+                    $boardFromMail = NC_BOARD["OA_BOARD"];
+                }else if($emailSenderDomain === SUBMITTER_ADDRESS["DOMAIN_CA"]){
+                    $boardFromMail = NC_BOARD["CA_BOARD"];
+                }else{
+                    $boardFromMail = NC_BOARD["DEFAULT_BOARD"];
+                }
             }
         if(preg_match('/s-"([^"]+)"/', $params, $m) || preg_match("/s-'([^']+)'/", $params, $m)) {
             $stackFromMail = $m[1];
@@ -108,8 +142,8 @@ class DeckClass {
     }
 
     //Add a new card
-    public function addCard($data, $user, $board = null) {
-        $params = $this->getParameters($data->title, $board);
+    public function addCard($data, $user,$mail_domain, $board = null) {
+        $params = $this->getParameters($data->title, $board, $mail_domain);
         if($params) {
             $data->title = $params->newTitle;
             $data->duedate = $params->dueDate;
@@ -138,8 +172,14 @@ class DeckClass {
             $data = array(
                 'file' => new \CURLFile($file)
             );
-            $this->apiCall("POST", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/{$card->board}/stacks/{$card->stack}/cards/{$card->id}/attachments?type=file", $data, true);
+            $response = $this->apiCall("POST", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/{$card->board}/stacks/{$card->stack}/cards/{$card->id}/attachments?type=file", $data, true);
+
+            if (isset($response->extendedData->fileid)) {
+                $imageUrl = NC_SERVER . "/index.php/apps/files/?dir=/Deck&fileid=" . $response->extendedData->fileid;
+            }
+
             unlink($file);
+            return $imageUrl;
         }
     }
 
