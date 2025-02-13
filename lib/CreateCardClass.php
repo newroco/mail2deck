@@ -67,9 +67,9 @@ class CreateCardClass{
 
             if (MAIL_NOTIFICATION) {
                 if (!$response) {
-                    $inbox->reply($mailSender->origin);
+                    $inbox->reply($mailSender->origin,$mailSender->userId);
                 }
-                $inbox->reply($mailSender->origin, $response);
+                $inbox->reply($mailSender->origin,$mailSender->userId, $response);
             }
         }else{
             $cleanedDescription = $newcard->extractForwardedContent($data->description);

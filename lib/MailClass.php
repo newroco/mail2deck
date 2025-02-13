@@ -54,7 +54,7 @@ class MailClass {
         return $headerInfo;
     }
 
-    public function reply($sender, $response = null) {
+    public function reply($sender, $sendername, $response = null) {
         $server = NC_SERVER;
 
         if(strstr($server, "https://")) {
@@ -99,8 +99,25 @@ class MailClass {
                 $subject = "A new card could not be created!";
             }
 
+             //Inline image
+             $description = $response->description;
+             $pattern = '/\[(.*?)\]\((https?:\/\/.*\.(?:jpg|jpeg|png|gif))\)/i';
+             if (preg_match($pattern, $description)) {
+                 $descriptionFormatted = preg_replace('/\[(.*?)\]\((.*?)\)/', '<img src="$2" alt="$1">', $description);
+             }else{
+                 $descriptionFormatted = $description;
+
+                 //Attachements
+                 $attachments = $response->attachments;
+                 if (!empty($attachments)) {
+                     foreach ($attachments as $attachment) {
+                         $descriptionFormatted .= "<br><a href=\"".NC_SERVER ."/remote.php/dav/files/".NC_USER."/Deck/".$attachment. "\" target='_blank'>$attachment</a><br>";
+                     }
+                 }
+             }
+
             $bodySupport="<p><a href=\"" . NC_SERVER . "/index.php/apps/deck/board/{$response->board}/card/{$response->id}" . "\">{$response->title}</a></p>"
-                ."<p>{$response->description}</p>"
+                ."<p>{$descriptionFormatted}</p>"
                 ."<p>Sent by: {$sender} </p>";
 
 
@@ -126,6 +143,7 @@ class MailClass {
                  * EMAIL 2: email to support team
                  */
                 $mail->addAddress(MAIL_SUPPORT);
+                $mail->addReplyTo($sender, $sendername);
                 $mail->Subject = "New Card Issue Notification";
                 $mail->Body =  "<html>"
                         ."<head><title>mail2deck response</title></head>"
