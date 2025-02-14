@@ -48,10 +48,10 @@ class DeckClass {
                     array(
                         'Accept: application/json',
                         'Content-Type: multipart/form-data',
-                        'Authorization: Basic ' . base64_encode(NC_USER . ':' . NC_PASSWORD),
+                        'Authorization: Basic ' . base64_encode(NC_ADMIN_USER . ':' . NC_ADMIN_USER),
                     )
                 ));
-                curl_setopt($curl, CURLOPT_USERPWD, NC_USER . ":" . NC_PASSWORD);
+                curl_setopt($curl, CURLOPT_USERPWD, NC_ADMIN_USER . ":" . NC_ADMIN_USER);
             }else{
                 curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($data));
                 curl_setopt($curl, CURLOPT_HTTPHEADER, array_merge(
@@ -59,7 +59,7 @@ class DeckClass {
                         'Accept: application/json',
                         'OCS-APIRequest: true',
                         'Content-Type:  application/json',
-                        'Authorization: Basic ' . base64_encode(NC_USER . ':' . NC_PASSWORD),
+                        'Authorization: Basic ' . base64_encode(NC_ADMIN_USER . ':' . NC_ADMIN_USER),
                     )
                 ));
             }
