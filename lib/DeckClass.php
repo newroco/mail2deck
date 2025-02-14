@@ -203,7 +203,7 @@ class DeckClass {
 
     private function checkBotPermissions($board) {
         foreach($board->acl as $acl)
-            if($acl->participant->uid == NC_USER && $acl->permissionEdit)
+            if($acl->participant->uid == NC_ADMIN_USER && $acl->permissionEdit)
                 return true;
 
         return false;
