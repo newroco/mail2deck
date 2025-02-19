@@ -42,7 +42,7 @@ class CreateCardClass{
         $hasCid = preg_match('/!\[.*?\]\(cid:[^)]+\)/', $description);
         if (!empty($attachments)) {
             foreach ($attachments as $attachment) {
-                $filePath = NC_SERVER .'/remote.php/dav/files/'.NC_USER.'/Deck/'.$attachment;
+                $filePath = NC_SERVER .'/remote.php/dav/files/'.NC_ADMIN_USER.'/Deck/'.$attachment;
                 if ($hasCid) {
                     $description = preg_replace('/!\[' . preg_quote($attachment, '/') . '\]\(cid:[^)]+\)/',"[$attachment]($filePath)", $description);
                 }else{
