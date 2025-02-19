@@ -38,10 +38,16 @@ class CreateCardClass{
         if ($description != strip_tags($description)) {
             $description = (new ConvertToMD($description))->execute();
         }
+
+        $hasCid = preg_match('/!\[.*?\]\(cid:[^)]+\)/', $description);
         if (!empty($attachments)) {
             foreach ($attachments as $attachment) {
                 $filePath = NC_SERVER .'/remote.php/dav/files/'.NC_USER.'/Deck/'.$attachment;
-                $description = preg_replace('/!\[' . preg_quote($attachment, '/') . '\]\(cid:[^)]+\)/',"[$attachment]($filePath)", $description);
+                if ($hasCid) {
+                    $description = preg_replace('/!\[' . preg_quote($attachment, '/') . '\]\(cid:[^)]+\)/',"[$attachment]($filePath)", $description);
+                }else{
+                    $description .= "\n\n[$attachment]($filePath)";
+                }
             }
         }
 
