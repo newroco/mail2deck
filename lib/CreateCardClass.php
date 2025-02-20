@@ -22,10 +22,37 @@ class CreateCardClass{
         return $data;
     }
 
-    function fetchMailBody($inbox, $emailId) {
-        $body = $inbox->fetchMessageBody($emailId, 1.2);
-        if (!strlen($body) > 0) {
-            $body = $inbox->fetchMessageBody($emailId, 1);
+    function fetchMailBody($structure,$inbox, $emailId) {
+        return $this->getHtmlPart($inbox, $emailId, $structure, '');
+    }
+    function getHtmlPart($inbox, $emailId, $structure, $prefix) {
+        if (!isset($structure->parts)) {
+            return null;
+        }
+
+        foreach ($structure->parts as $index => $part) {
+            $partIndex = $prefix ? "$prefix." . ($index + 1) : ($index + 1);
+
+            if (isset($part->subtype) && strtoupper($part->subtype) == 'HTML') {
+                $body = $inbox->fetchMessageBody($emailId, $partIndex);;
+                return $this->decodeBody($body, $part->encoding);
+            }
+
+            if (isset($part->subtype) && (strtoupper($part->subtype) == 'RELATED' || strtoupper($part->subtype) == 'ALTERNATIVE')) {
+                $result = $this->getHtmlPart($inbox, $emailId, $part, $partIndex);
+                if ($result) {
+                    return $result;
+                }
+            }
+        }
+        return null;
+    }
+
+    function decodeBody($body, $encoding) {
+        if ($encoding == 3) { // BASE64
+            return base64_decode($body);
+        } elseif ($encoding == 4) { // QUOTED-PRINTABLE
+            return quoted_printable_decode($body);
         }
         return $body;
     }
@@ -38,19 +65,6 @@ class CreateCardClass{
         if ($description != strip_tags($description)) {
             $description = (new ConvertToMD($description))->execute();
         }
-
-        $hasCid = preg_match('/!\[.*?\]\(cid:[^)]+\)/', $description);
-        if (!empty($attachments)) {
-            foreach ($attachments as $attachment) {
-                $filePath = NC_SERVER .'/remote.php/dav/files/'.NC_ADMIN_USER.'/Deck/'.$attachment;
-                if ($hasCid) {
-                    $description = preg_replace('/!\[' . preg_quote($attachment, '/') . '\]\(cid:[^)]+\)/',"[$attachment]($filePath)", $description);
-                }else{
-                    $description .= "\n\n[$attachment]($filePath)";
-                }
-            }
-        }
-
         return $description;
     }
 
@@ -70,6 +84,13 @@ class CreateCardClass{
         if (!$existingCardId) {
             $response = $newcard->addCard($data, $mailSender->origin, $mailSender->host);
             error_log("New card created with response: " . json_encode($response));
+
+            if($data->attachments){
+                $imageUrls = $newcard->addAttachments($response, $data->attachments);
+                if (!empty($imageUrls)) {
+                    $newcard->updateCardDescription($response, $imageUrls);
+                }
+            }
 
             if (MAIL_NOTIFICATION) {
                 if (!$response) {

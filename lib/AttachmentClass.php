@@ -14,9 +14,9 @@ class AttachmentClass {
             $partIndex = $parentIndex ? strval($parentIndex) . '.' . ($index + 1) : ($index + 1);
 
                 if (isset($part->parts) && count($part->parts) > 1) {
-                    $result= $this->formattingAttachment($part->parts, $inbox, $emails, $partIndex); //subpart exists in the structure
+                    $result= $this->processAttachment($part->parts, $inbox, $emails, $partIndex);//subpart exists in the structure
                 }else{
-                    $result= $this->formattingAttachment([$part], $inbox, $emails, $partIndex);
+                    $result= $this->processAttachment([$part], $inbox, $emails, $partIndex);
                 }
                  if ($result) {
                     $attachments = array_merge($attachments, $result);
@@ -43,8 +43,7 @@ class AttachmentClass {
         return $attNames;
     }
 
-
-    function formattingAttachment($parts, $inbox, $emails, $index) {
+    function processAttachment($parts, $inbox, $emails, $index) {
         $attachments = array();
         foreach ($parts as $j => $part) {
             if ($part->ifdparameters || $part->ifparameters) {
@@ -56,10 +55,10 @@ class AttachmentClass {
                         $attachment['is_attachment'] = true;
                         $attachment[$attributeName] = $object->value;
 
-                        if($part->disposition == "inline" || $part->disposition == "attachment"){
+                        if( $part->disposition == "attachment"){
                             $partindex= $index;
                         }else{
-                            $partindex= $index . "." . ($j + 1); //if the attachment is part of the subpart
+                            $partindex= $index . "." . ($j + 1);
                         }
 
                         $attachment['attachment']= $inbox->fetchMessageBody($emails,$partindex);

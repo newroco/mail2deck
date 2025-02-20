@@ -7,24 +7,14 @@ class DeckClass {
 
     private function apiCall($request, $endpoint, $data = null, $attachment = false, $userapi = false){
         $curl = curl_init();
-        if($data && !$attachment) {
-            if ($request === "PUT") {
-                if (is_array($data) || is_object($data)) {
-                    $jsonData = json_encode($data);
-                } else {
-                    $jsonData = $data;
-                }
 
-                curl_setopt($curl, CURLOPT_POSTFIELDS, $jsonData);
-                curl_setopt($curl, CURLOPT_HTTPHEADER, [
-                    'Content-Type: application/json',
-                    'Content-Length: ' . strlen($jsonData)
-                ]);
-            } else {
-                $endpoint .= '?' . http_build_query($data);
-            }
+        // POST and PUT
+        if ($data) {
+            $data = (array) $data;
+            $jsonData = $attachment ? $data : json_encode($data, JSON_PRETTY_PRINT);
         }
-        curl_setopt_array($curl, array(
+
+        curl_setopt_array($curl, [
             CURLOPT_URL => $endpoint,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPGET => true,
@@ -34,35 +24,10 @@ class DeckClass {
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => $request,
-            CURLOPT_HTTPHEADER => array(
-                'Authorization: Basic ' . base64_encode(NC_ADMIN_USER . ':' . NC_ADMIN_PASSWORD),
-                'OCS-APIRequest: true',
-            ),
-        ));
-
-        if ($request === 'POST') {
-            if ($attachment){
-                curl_setopt($curl, CURLOPT_POST, true);
-                curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
-                curl_setopt($curl, CURLOPT_HTTPHEADER, array_merge(
-                    array(
-                        'Accept: application/json',
-                        'Content-Type: multipart/form-data',
-                        'Authorization: Basic ' . base64_encode(NC_ADMIN_USER . ':' . NC_ADMIN_PASSWORD),
-                    )
-                ));
-                curl_setopt($curl, CURLOPT_USERPWD, NC_ADMIN_USER . ":" . NC_ADMIN_PASSWORD);
-            }else{
-                curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($data));
-                curl_setopt($curl, CURLOPT_HTTPHEADER, array_merge(
-                    array(
-                        'Accept: application/json',
-                        'OCS-APIRequest: true',
-                        'Content-Type:  application/json',
-                        'Authorization: Basic ' . base64_encode(NC_ADMIN_USER . ':' . NC_ADMIN_PASSWORD),
-                    )
-                ));
-            }
+            CURLOPT_HTTPHEADER => $this->setRequestHeaders($curl, $attachment),
+        ]);
+        if ($request === 'POST' || $request === 'PUT') {
+            curl_setopt($curl, CURLOPT_POSTFIELDS, $jsonData);
         }
 
         $response = curl_exec($curl);
@@ -74,6 +39,21 @@ class DeckClass {
         if($err) echo "cURL Error #:" . $err;
 
         return json_decode($response);
+    }
+
+    private function setRequestHeaders($curl, $attachment) {
+        $headers = [
+            'Authorization: Basic ' . base64_encode(NC_ADMIN_USER . ':' . NC_ADMIN_PASSWORD),
+            'Accept: application/json',
+            'OCS-APIRequest: true',
+        ];
+
+        if ($attachment) {
+            $headers[] = 'Content-Type: multipart/form-data';
+        } else {
+            $headers[] = 'Content-Type: application/json';
+        }
+        return $headers;
     }
 
     public function getParameters($params, $boardFromMail = null, $mail_domain) {// get the board and the stack
@@ -147,14 +127,13 @@ class DeckClass {
         if($params) {
             $data->title = $params->newTitle;
             $data->duedate = $params->dueDate;
-            $card = $this->apiCall("POST", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/{$params->board}/stacks/{$params->stack}/cards", $data);
+            $card = $this->apiCall("POST", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/{$params->board}/stacks/{$params->stack}/cards",$data);
             $card->board = $params->board;
             $card->stack = $params->stack;
-
             if($this->responseCode == 200) {
                 if(ASSIGN_SENDER || $user) $this->assignUser($card, $user);
-                if($data->attachments) $this->addAttachments($card, $data->attachments);
                 $card->boardTitle = $params->boardTitle;
+                $card->description =  $data->description;
             }
             else {
                 return false;
@@ -165,22 +144,52 @@ class DeckClass {
     }
 
     //Add a new attachment
-    private function addAttachments($card, $attachments) {
+    public function addAttachments($card, $attachments) {
         $fullPath = getcwd() . "/attachments/"; //get full path to attachments directory
+        $imageUrls = [];
         for ($i = 0; $i < count($attachments); $i++) {
             $file = $fullPath . $attachments[$i];
+            if (!file_exists($file)) {
+                die("Eroare: Fișierul $file nu există!");
+            }
             $data = array(
                 'file' => new \CURLFile($file)
             );
             $response = $this->apiCall("POST", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/{$card->board}/stacks/{$card->stack}/cards/{$card->id}/attachments?type=file", $data, true);
-
             if (isset($response->extendedData->fileid)) {
-                $imageUrl = NC_SERVER . "/index.php/apps/files/?dir=/Deck&fileid=" . $response->extendedData->fileid;
+                $imageUrls[] = [
+                    'fileid' => $response->extendedData->fileid,
+                    'filename' => $attachments[$i]
+                ];
             }
-
             unlink($file);
-            return $imageUrl;
         }
+        return $imageUrls;
+    }
+
+    public function updateCardDescription($card, $imageUrls) {
+        $newDescription = $card->description . "\n\n";
+        $matches = [];
+        preg_match_all('/!\[.*?\]\(cid:[^)]+\)/', $newDescription, $matches);
+
+        foreach ($imageUrls as $img) {
+            $fileid = $img['fileid'];
+            $filename = $img['filename'];
+            $url = NC_SERVER . "/f/{$fileid}";
+
+            $newDescription = preg_replace('/!\[.*?\]\(cid:[^)]+\)/', "[$filename]($url)", $newDescription);
+        }
+
+        $data = [
+            'title' => $card->title,
+            'description' => $newDescription,
+            'type' => $card->type,
+            'order' =>$card->order,
+            'duedate'=>$card->duedate,
+            'owner'=>$card->owner
+        ];
+
+        $this->apiCall("PUT",NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/{$card->board}/stacks/{$card->stack}/cards/{$card->id}",$data);
     }
 
     //Assign a user to the card
@@ -209,14 +218,24 @@ class DeckClass {
         return false;
     }
 
+    public function getAllBoards() {
+        return $this->apiCall("GET", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards");
+    }
+    public function getStacksByBoard($boardId) {
+        return $this->apiCall("GET", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/{$boardId}/stacks");
+    }
+    public function getCardsByStack($stack) {
+        return $stack->cards ?? [];
+    }
     //Identify the card by email subject
     public function findCardBySubject($subject) {
-        $boards = $this->apiCall("GET", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards");
+        $boards = $this->getAllBoards();
         $cleanSubject = preg_replace("/\s[b|s|u]-'.*?'/", '', $subject);
         foreach ($boards as $board) {
-            $stacks = $this->apiCall("GET", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/{$board->id}/stacks");
+            $stacks =$this->getStacksByBoard($board->id);
             foreach ($stacks as $stack) {
-                foreach ($stack->cards as $card) {
+                $cards = $this->getCardsByStack($stack);
+                foreach ($cards as $card) {
                     if (strtolower(trim($card->title)) == strtolower(trim($cleanSubject))) {
                         return [
                             'cardId' => $card->id,

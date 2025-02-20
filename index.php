@@ -36,7 +36,7 @@ for ($j = 0; $j < count($emails) && $j < 5; $j++) {
 
     $mailSender = new stdClass();
     $data = $createCardClass->createMailData($overview, $mailSender);
-    $body = $createCardClass->fetchMailBody($inbox, $emails[$j]);
+    $body = $createCardClass->fetchMailBody($structure,$inbox, $emails[$j]);
 
     $newcard = new DeckClass();
     $data->attachments = $attNames;
