@@ -101,10 +101,8 @@ class MailClass {
 
              //Inline image
              $description = $response->description;
-             $pattern = '/\[(.*?)\]\((https?:\/\/.*\.(?:jpg|jpeg|png|gif))\)/i';
+             $pattern = '/\[(.*?)\]\((.*?)\)/';
              if (preg_match($pattern, $description)) {
-                 $descriptionFormatted = preg_replace('/\[(.*?)\]\((.*?)\)/', '<img src="$2" alt="$1">', $description);
-             }else{
                 $descriptionFormatted = preg_replace('/\[(.*?)\]\((.*?)\)/', '<a href="$2" target="_blank">$1</a>', $description);
              }
 

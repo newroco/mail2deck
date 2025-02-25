@@ -62,6 +62,9 @@ class AttachmentClass {
                         }
 
                         $attachment['attachment']= $inbox->fetchMessageBody($emails,$partindex);
+                        if(! $attachment['attachment']){
+                            $attachment['attachment']= $inbox->fetchMessageBody($emails,$index);
+                        }
 
                         if ($part->encoding == 3) { // BASE64
                             $attachment['attachment'] = base64_decode( $attachment['attachment'],true);
