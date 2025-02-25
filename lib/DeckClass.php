@@ -190,6 +190,7 @@ class DeckClass {
         ];
 
         $this->apiCall("PUT",NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/{$card->board}/stacks/{$card->stack}/cards/{$card->id}",$data);
+        return $newDescription;
     }
 
     //Assign a user to the card
@@ -199,11 +200,10 @@ class DeckClass {
         $adminPassword = urlencode(NC_ADMIN_PASSWORD);
 
         $url = "https://{$adminUser}:{$adminPassword}@" . NC_HOST;
-        $allUsers= $this->apiCall("GET",$url."/ocs/v1.php/cloud/users", null, false, true); //nextcloud user list
-
-        foreach ($allUsers->data->users->element as $userId) {
-            $userDetails = $this->apiCall("GET",$url."/ocs/v1.php/cloud/users/{$userId}",null, false, true);//search in the nextcloud user list
-            if (isset($userDetails->data->email[0]) && $userDetails->data->email[0] == $mailUser) {
+        $allUsers= $this->apiCall("GET",$url."/ocs/v1.php/cloud/users"); //nextcloud user list
+        foreach ($allUsers->ocs->data->users as $userId) {
+            $userDetails = $this->apiCall("GET",$url."/ocs/v1.php/cloud/users/{$userId}");//search in the nextcloud user list
+            if (isset($userDetails->ocs->data->email) && $userDetails->ocs->data->email == $mailUser) {
                 $this->apiCall("PUT", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/{$card->board}/stacks/{$card->stack}/cards/{$card->id}/assignUser", ['userId' => (string)$userId]);
                 break;
             }

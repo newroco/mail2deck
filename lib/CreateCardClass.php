@@ -88,7 +88,8 @@ class CreateCardClass{
             if($data->attachments){
                 $imageUrls = $newcard->addAttachments($response, $data->attachments);
                 if (!empty($imageUrls)) {
-                    $newcard->updateCardDescription($response, $imageUrls);
+                    $newDescription =$newcard->updateCardDescription($response, $imageUrls);
+                    $response->description= $newDescription;
                 }
             }
 

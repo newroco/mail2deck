@@ -105,15 +105,7 @@ class MailClass {
              if (preg_match($pattern, $description)) {
                  $descriptionFormatted = preg_replace('/\[(.*?)\]\((.*?)\)/', '<img src="$2" alt="$1">', $description);
              }else{
-                 $descriptionFormatted = $description;
-
-                 //Attachements
-                 $attachments = $response->attachments;
-                 if (!empty($attachments)) {
-                     foreach ($attachments as $attachment) {
-                         $descriptionFormatted .= "<br><a href=\"".NC_SERVER ."/remote.php/dav/files/".NC_USER."/Deck/".$attachment. "\" target='_blank'>$attachment</a><br>";
-                     }
-                 }
+                $descriptionFormatted = preg_replace('/\[(.*?)\]\((.*?)\)/', '<a href="$2" target="_blank">$1</a>', $description);
              }
 
             $bodySupport="<p><a href=\"" . NC_SERVER . "/index.php/apps/deck/board/{$response->board}/card/{$response->id}" . "\">{$response->title}</a></p>"
