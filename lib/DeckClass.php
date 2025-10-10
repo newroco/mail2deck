@@ -136,11 +136,11 @@ class DeckClass {
                 $card->description =  $data->description;
             }
             else {
-                return false;
+                throw new \Exception("Failed to create card on board '{$params->boardTitle}'");
             }
             return $card;
         }
-        return false;
+       throw new \Exception("Invalid board parameters or missing board in Nextcloud Deck.");
     }
 
     //Add a new attachment
@@ -211,10 +211,15 @@ class DeckClass {
     }
 
     private function checkBotPermissions($board) {
-        foreach($board->acl as $acl)
-            if($acl->participant->uid == NC_ADMIN_USER && $acl->permissionEdit)
-                return true;
+        if ($board->title === NC_DEFAULT_BOARD) {
+            return true;
+        }
 
+        foreach($board->acl as $acl) {
+            if($acl->participant->uid == NC_ADMIN_USER && $acl->permissionEdit) {
+                return true;
+            }
+        }
         return false;
     }
 

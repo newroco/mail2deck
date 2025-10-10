@@ -77,12 +77,14 @@ class CreateCardClass{
         return $cleanedSubject;
     }
 
-    function createCard($newcard, $data, $mailSender, $cleanedSubject, $inbox){
+    function createCard($newcard, $data, $mailSender, $cleanedSubject, $inbox, $board = null){
         $existingCardId = $newcard->findCardBySubject($cleanedSubject);
         $mailSender->origin .= "{$mailSender->userId}@{$mailSender->host}";
-
+        if (!$board) {
+            $board = NC_DEFAULT_BOARD;
+        }
         if (!$existingCardId) {
-            $response = $newcard->addCard($data, $mailSender->origin, $mailSender->host);
+            $response = $newcard->addCard($data, $mailSender->origin, $mailSender->host, $board);
             error_log("New card created with response: " . json_encode($response));
 
             if($data->attachments){

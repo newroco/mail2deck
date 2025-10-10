@@ -167,4 +167,15 @@ class MailClass {
     {
         imap_expunge($this->inbox);
     }
+
+    /**
+     * Mark email as read
+     *
+     * @param $email email number that you want to mark as read
+     * @return void
+     */
+    public function markAsRead(int $email)
+    {
+        imap_setflag_full($this->inbox, $email, "\\Seen");
+    }
 }
