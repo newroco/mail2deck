@@ -18,7 +18,7 @@ if(!$emails) {
     return;
 }
 
-$defaultBoard = NC_DEFAULT_BOARD;
+$defaultBoard = NC_BOARD["DEFAULT_BOARD"];
 
 for ($j = 0; $j < count($emails) && $j < 5; $j++) {
     try {
@@ -75,7 +75,7 @@ for ($j = 0; $j < count($emails) && $j < 5; $j++) {
         $mailSender->host = $overview->reply_to[0]->host ?? "unknown";
 
         $createCardClass = new CreateCardClass();
-        $errorBoard = NC_DEFAULT_BOARD;
+        $errorBoard = NC_BOARD["DEFAULT_BOARD"];
 
         $createCardClass->createCard($newcard, $errorData, $mailSender, $errorData->title, $inbox, $errorBoard);
 

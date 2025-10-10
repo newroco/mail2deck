@@ -81,7 +81,7 @@ class CreateCardClass{
         $existingCardId = $newcard->findCardBySubject($cleanedSubject);
         $mailSender->origin .= "{$mailSender->userId}@{$mailSender->host}";
         if (!$board) {
-            $board = NC_DEFAULT_BOARD;
+            $board = NC_BOARD["DEFAULT_BOARD"];
         }
         if (!$existingCardId) {
             $response = $newcard->addCard($data, $mailSender->origin, $mailSender->host, $board);

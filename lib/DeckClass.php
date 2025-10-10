@@ -211,7 +211,7 @@ class DeckClass {
     }
 
     private function checkBotPermissions($board) {
-        if ($board->title === NC_DEFAULT_BOARD) {
+        if ($board->title === NC_BOARD["DEFAULT_BOARD"]) {
             return true;
         }
 
