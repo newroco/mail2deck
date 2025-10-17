@@ -27,7 +27,9 @@ class CreateCardClass{
     }
     function getHtmlPart($inbox, $emailId, $structure, $prefix) {
         if (!isset($structure->parts)) {
-            return null;
+            $body = $inbox->fetchMessageBody($emailId, 1);
+            $body = $this->decodeBody($body, $structure->encoding);
+            return $body;
         }
 
         foreach ($structure->parts as $index => $part) {
@@ -79,7 +81,7 @@ class CreateCardClass{
 
     function createCard($newcard, $data, $mailSender, $cleanedSubject, $inbox, $board = null){
         $existingCardId = $newcard->findCardBySubject($cleanedSubject);
-        $mailSender->origin .= "{$mailSender->userId}@{$mailSender->host}";        
+        $mailSender->origin .= "{$mailSender->userId}@{$mailSender->host}";
         if (!$existingCardId) {
             $response = $newcard->addCard($data, $mailSender->origin, $mailSender->host, $board);
             error_log("New card created with response: " . json_encode($response));
