@@ -62,7 +62,7 @@ class DeckClass {
             		$boardFromMail = $m[1];
             		$params = str_replace($m[0], '', $params);
         	}else{
-                $emailSenderDomain = '@'.$mail_domain;
+                $emailSenderDomain = '@'.strtolower($mail_domain);
                 if($emailSenderDomain === SUBMITTER_ADDRESS["DOMAIN_OA"]){
                     $boardFromMail = NC_BOARD["OA_BOARD"];
                 }else if($emailSenderDomain === SUBMITTER_ADDRESS["DOMAIN_CA"]){
@@ -169,6 +169,8 @@ class DeckClass {
 
     public function updateCardDescription($card, $imageUrls) {
         $newDescription = $card->description . "\n\n";
+        //remove any HTML comments
+        $newDescription = preg_replace('/<!--.*?-->/s', '', $newDescription);
         $matches = [];
         preg_match_all('/!\[.*?\]\(cid:[^)]+\)/', $newDescription, $matches);
 
