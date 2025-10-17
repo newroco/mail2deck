@@ -100,11 +100,15 @@ class MailClass {
             }
 
              //Inline image
-             $description = $response->description;
-             $pattern = '/\[(.*?)\]\((.*?)\)/';
-             if (preg_match($pattern, $description)) {
-                $descriptionFormatted = preg_replace('/\[(.*?)\]\((.*?)\)/', '<a href="$2" target="_blank">$1</a>', $description);
-             }
+            $description = $response->description;
+            $description = str_replace("\r\n", "\n", $description);
+
+            $pattern = '/\[(.*?)\]\((.*?)\)/';
+            if (preg_match($pattern, $description)) {
+                $descriptionFormatted = preg_replace( $pattern,'<a href="$2" target="_blank">$1</a>',$description);
+            } else {
+                $descriptionFormatted = nl2br(htmlspecialchars($description));
+            }
 
             $bodySupport="<p><a href=\"" . NC_SERVER . "/index.php/apps/deck/board/{$response->board}/card/{$response->id}" . "\">{$response->title}</a></p>"
                 ."<p>{$descriptionFormatted}</p>"
