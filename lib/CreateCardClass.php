@@ -134,4 +134,5 @@ class CreateCardClass{
         }
         
         curl_close($curl);
+    }
 }
