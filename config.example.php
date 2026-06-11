@@ -26,3 +26,5 @@ define("SUBMITTER_ADDRESS", [
     "DOMAIN_CA" => "@ca"
 ]);
 define("MAIL_SUPPORT","");//If not empty, use this value to send to the Support team: card url, the description and who submitted the request.
+
+define("ROCKETCHAT_WEBHOOK", ""); //add rocketchat notification webhook
