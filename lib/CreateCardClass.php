@@ -86,6 +86,10 @@ class CreateCardClass{
             $response = $newcard->addCard($data, $mailSender->origin, $mailSender->host, $board);
             error_log("New card created with response: " . json_encode($response));
 
+            if ($response && defined('ROCKETCHAT_WEBHOOK')){
+                $this->notifyRocketChat($response);
+            }
+            
             if($data->attachments){
                 $imageUrls = $newcard->addAttachments($response, $data->attachments);
                 if (!empty($imageUrls)) {
@@ -106,4 +110,28 @@ class CreateCardClass{
             error_log("Comment added with response: " . json_encode($response));
         }
     }
+
+    function notifyRocketChat($card){
+        $cardUrl = NC_SERVER . "/index.php/apps/deck/board/{$card->board}/card/{$card->id}";
+        $boardTitle = $card->boardTitle ?? "Deck";
+                $payload = json_encode([
+            'text' => "New ticket on **{$boardTitle}**\n[{$card->title}]({$cardUrl})"
+        ]);
+        
+        $curl = curl_init();
+        curl_setopt_array($curl, [
+            CURLOPT_URL => ROCKETCHAT_WEBHOOK,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => $payload,
+            CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+            CURLOPT_TIMEOUT => 5,
+        ]);
+        
+        $resp = curl_exec($curl);
+        if (curl_errno($curl)) {
+            error_log("RocketChat notify error: " . curl_error($curl));
+        }
+        
+        curl_close($curl);
 }
