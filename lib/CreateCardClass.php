@@ -48,6 +48,10 @@ class CreateCardClass{
         foreach ($structure->parts as $index => $part) {
             $partIndex = $prefix ? "$prefix." . ($index + 1) : ($index + 1);
 
+            if ($this->isAttachmentDisposition($part)) {
+                continue;
+            }
+
             if (isset($part->subtype) && strtoupper($part->subtype) == 'HTML') {
                 $body = $inbox->fetchMessageBody($emailId, $partIndex);
                 return $this->decodeBody($body, $part->encoding);
@@ -69,6 +73,10 @@ class CreateCardClass{
         return null;
     }
 
+    function isAttachmentDisposition($part) {
+        return isset($part->disposition) && strtoupper($part->disposition) === 'ATTACHMENT';
+    }
+
     function decodeBody($body, $encoding) {
         if ($encoding == 3) { // BASE64
             return base64_decode($body);
@@ -79,7 +87,7 @@ class CreateCardClass{
     }
 
     function mailDescription ($body, $base64encode, $attachments) {
-$description = $body;
+        $description = $body;
         if ($description != strip_tags($description)) {
             $description = (new ConvertToMD($description))->execute();
         }
