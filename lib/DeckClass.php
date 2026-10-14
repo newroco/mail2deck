@@ -7,9 +7,10 @@ class DeckClass {
 
     private function apiCall($request, $endpoint, $data = null, $attachment = false, $userapi = false){
         $curl = curl_init();
+        $jsonData = null;
 
         // POST and PUT
-        if ($data) {
+        if ($data !== null) {
             $data = (array) $data;
             $jsonData = $attachment ? $data : json_encode($data, JSON_PRETTY_PRINT);
         }
@@ -24,24 +25,59 @@ class DeckClass {
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => $request,
-            CURLOPT_HTTPHEADER => $this->setRequestHeaders($curl, $attachment),
+            CURLOPT_HTTPHEADER => $this->setRequestHeaders($attachment),
         ]);
-        if ($request === 'POST' || $request === 'PUT') {
+        if (($request === 'POST' || $request === 'PUT') && $jsonData !== null) {
             curl_setopt($curl, CURLOPT_POSTFIELDS, $jsonData);
         }
 
         $response = curl_exec($curl);
         $err = curl_error($curl);
-        if($userapi) return simplexml_load_string($response);
         $this->responseCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-
         curl_close($curl);
-        if($err) echo "cURL Error #:" . $err;
 
-        return json_decode($response);
+        if ($response === false || $err) {
+            throw new \RuntimeException("cURL request failed: " . ($err ?: 'Unknown transport error'));
+        }
+
+        if ($this->responseCode < 200 || $this->responseCode >= 300) {
+            $message = "HTTP {$this->responseCode} returned by {$endpoint}";
+            $decodedError = json_decode($response);
+
+            if (json_last_error() === JSON_ERROR_NONE && is_object($decodedError)) {
+                if (isset($decodedError->message) && is_string($decodedError->message)) {
+                    $message .= ": {$decodedError->message}";
+                } elseif (isset($decodedError->ocs->meta->message) && is_string($decodedError->ocs->meta->message)) {
+                    $message .= ": {$decodedError->ocs->meta->message}";
+                }
+            } elseif (trim($response) !== '') {
+                $message .= ": " . trim($response);
+            }
+
+            throw new \RuntimeException($message);
+        }
+
+        if ($userapi) {
+            $xmlResponse = simplexml_load_string($response);
+            if ($xmlResponse === false) {
+                throw new \RuntimeException("Failed to decode XML response from {$endpoint}");
+            }
+            return $xmlResponse;
+        }
+
+        if (trim($response) === '') {
+            return null;
+        }
+
+        $decodedResponse = json_decode($response);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new \RuntimeException("Failed to decode JSON response from {$endpoint}: " . json_last_error_msg());
+        }
+
+        return $decodedResponse;
     }
 
-    private function setRequestHeaders($curl, $attachment) {
+    private function setRequestHeaders($attachment) {
         $headers = [
             'Authorization: Basic ' . base64_encode(NC_ADMIN_USER . ':' . NC_ADMIN_PASSWORD),
             'Accept: application/json',
@@ -57,6 +93,8 @@ class DeckClass {
     }
 
     public function getParameters($params, $boardFromMail = null, $mail_domain) {// get the board and the stack
+        $userFromMail = null;
+        $duedateFromMail = null;
 	    if(!$boardFromMail) // if board is not set within the email address, look for board into email subject
         	if(preg_match('/b-"([^"]+)"/', $params, $m) || preg_match("/b-'([^']+)'/", $params, $m)) {
             		$boardFromMail = $m[1];
@@ -122,7 +160,7 @@ class DeckClass {
         $boardStack->stack = $stackId;
         $boardStack->newTitle = $params;
         $boardStack->boardTitle = $boardName;
-        $boardStack->userId = strtolower($userFromMail);
+        $boardStack->userId = $userFromMail !== null ? strtolower($userFromMail) : null;
         $boardStack->dueDate = $duedateFromMail;
 
 
