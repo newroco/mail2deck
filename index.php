@@ -106,6 +106,7 @@ foreach ($emails as $emailNumber) {
     $data = new stdClass();
     $data->title = null;
     $data->description = null;
+    $attachmentFiles = [];
 
     try {
         $structure = $inbox->fetchMessageStructure($emailNumber);
@@ -117,6 +118,11 @@ foreach ($emails as $emailNumber) {
         // Check for attachments
         $attclass = new AttachmentClass();
         $attNames = $attclass->Attachment($structure, $inbox, $emailNumber);
+        foreach ($attNames as $attachment) {
+            if (is_array($attachment) && isset($attachment['path'])) {
+                $attachmentFiles[] = $attachment['path'];
+            }
+        }
 
         // Create Card
         $createCardClass = new CreateCardClass();
@@ -166,6 +172,12 @@ foreach ($emails as $emailNumber) {
         } catch (\Throwable $persistenceError) {
             recordFailedEmailAttempt($failedEmailState, $emailKey, $e, $persistenceError);
             error_log("mail2deck failed to process email {$emailNumber}: {$e->getMessage()} | error persistence failed: {$persistenceError->getMessage()}");
+        }
+    } finally {
+        foreach (array_unique($attachmentFiles) as $attachmentFile) {
+            if (is_string($attachmentFile) && $attachmentFile !== '' && is_file($attachmentFile)) {
+                unlink($attachmentFile);
+            }
         }
     }
 
