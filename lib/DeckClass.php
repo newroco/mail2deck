@@ -139,7 +139,7 @@ class DeckClass {
             $card->board = $params->board;
             $card->stack = $params->stack;
             if($this->responseCode == 200) {
-                if(ASSIGN_SENDER || $user) $this->assignUser($card, $user);
+                if(ASSIGN_SENDER && $user) $this->assignUser($card, $user);
                 $card->boardTitle = $params->boardTitle;
                 $card->description =  $data->description;
             }
