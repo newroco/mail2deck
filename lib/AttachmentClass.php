@@ -58,11 +58,15 @@ class AttachmentClass {
             if ($part->ifdparameters || $part->ifparameters) {
                 $parameters = $part->ifdparameters ? $part->dparameters : $part->parameters;
                 $attributeName = $part->ifdparameters ? 'filename' : 'name';
+                $contentId = $this->normalizeContentId($part->id ?? null);
 
                 foreach ($parameters as $object) {
                     if (strtolower($object->attribute) == strtolower($attributeName)) {
                         $attachment['is_attachment'] = true;
                         $attachment[$attributeName] = $object->value;
+                        if ($contentId !== null) {
+                            $attachment['cid'] = $contentId;
+                        }
 
                         $attachment['attachment'] = $inbox->fetchMessageBody($emails, $partIndex);
                         if (! $attachment['attachment']) {
@@ -80,5 +84,24 @@ class AttachmentClass {
             }
         }
         return $attachments;
+    }
+
+    private function normalizeContentId($contentId) {
+        if (!is_string($contentId)) {
+            return null;
+        }
+
+        $contentId = trim($contentId);
+        if ($contentId === '') {
+            return null;
+        }
+
+        if ($contentId[0] === '<' && substr($contentId, -1) === '>') {
+            $contentId = substr($contentId, 1, -1);
+        }
+
+        $contentId = trim($contentId);
+
+        return $contentId !== '' ? $contentId : null;
     }
 }

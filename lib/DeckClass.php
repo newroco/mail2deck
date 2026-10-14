@@ -207,7 +207,8 @@ class DeckClass {
             if (isset($response->extendedData->fileid)) {
                 $imageUrls[] = [
                     'fileid' => $response->extendedData->fileid,
-                    'filename' => $displayName
+                    'filename' => $displayName,
+                    'cid' => $attachment['cid'] ?? null,
                 ];
             }
             unlink($file);
@@ -219,15 +220,18 @@ class DeckClass {
         $newDescription = $card->description . "\n\n";
         //remove any HTML comments
         $newDescription = preg_replace('/<!--.*?-->/s', '', $newDescription);
-        $matches = [];
-        preg_match_all('/!\[.*?\]\(cid:[^)]+\)/', $newDescription, $matches);
 
         foreach ($imageUrls as $img) {
+            if (!isset($img['cid']) || $img['cid'] === '') {
+                continue;
+            }
+
             $fileid = $img['fileid'];
             $filename = $img['filename'];
             $url = NC_SERVER . "/f/{$fileid}";
+            $cidPattern = '/!\[[^\]]*\]\(cid:' . preg_quote($img['cid'], '/') . '\)/';
 
-            $newDescription = preg_replace('/!\[.*?\]\(cid:[^)]+\)/', "[$filename]($url)", $newDescription, 1);
+            $newDescription = preg_replace($cidPattern, "[$filename]($url)", $newDescription, 1);
         }
 
         $data = [
