@@ -33,6 +33,12 @@ class AttachmentClass {
                 $filename = $attachments[$i]['name'];
                 if (empty($filename)) $filename = $attachments[$i]['filename'];
 
+                //ignore small images from signature
+                $minSize = defined('MIN_ATTACHMENT_SIZE') ? MIN_ATTACHMENT_SIZE : 5120;
+                if (preg_match('/\.(png|jpe?g|gif|bmp|webp|svg)$/i', $filename) && strlen($attachments[$i]['attachment']) < $minSize) {
+                    continue;
+                }
+                
                 $fp = fopen(getcwd() . '/attachments/' . $filename, "w+");
                 fwrite($fp, $attachments[$i]['attachment']);
                 fclose($fp);
