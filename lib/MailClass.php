@@ -72,7 +72,7 @@ class MailClass {
             $mail->Password = MAIL_PASSWORD;
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
             $mail->Port = MAIL_SERVER_SMTPPORT;
-            $mail->setFrom(MAIL_USER, 'Mail2Deck Notification');
+            $mail->setFrom(MAIL_FROM, 'Mail2Deck Notification');
             $mail->isHTML(true);
             $mail->SMTPOptions = [
                 'ssl' => [

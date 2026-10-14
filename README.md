@@ -81,6 +81,7 @@ cp config.example.php config.php
 sudo vim config.php
 ```
 *You can refer to https://www.php.net/manual/en/function.imap-open.php for setting the value of MAIL_SERVER_FLAGS*
+*Set `MAIL_FROM` to a valid sender email address for notifications. `MAIL_USER` is only the IMAP/SMTP login username and may be something like `incoming`.*
 #### Add a cronjob to run mail2deck.
 ```
 sudo crontab -u incoming -e
@@ -96,6 +97,7 @@ cd mail2deck
 cp config.example.php config.php
 nano config.php
 ```
+*Set `MAIL_FROM` to a valid sender email address for notifications. `MAIL_USER` is only the IMAP/SMTP login username and may be something like `incoming`.*
 
 Build your image locally
 ```
