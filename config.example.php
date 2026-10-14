@@ -28,3 +28,5 @@ define("SUBMITTER_ADDRESS", [
 define("MAIL_SUPPORT","");//If not empty, use this value to send to the Support team: card url, the description and who submitted the request.
 
 define("ROCKETCHAT_WEBHOOK", ""); //add rocketchat notification webhook
+
+define("MIN_ATTACHMENT_SIZE", 5120); // in bytes; images smaller than this are not attached
