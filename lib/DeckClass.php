@@ -179,7 +179,7 @@ class DeckClass {
             $filename = $img['filename'];
             $url = NC_SERVER . "/f/{$fileid}";
 
-            $newDescription = preg_replace('/!\[.*?\]\(cid:[^)]+\)/', "[$filename]($url)", $newDescription);
+            $newDescription = preg_replace('/!\[.*?\]\(cid:[^)]+\)/', "[$filename]($url)", $newDescription, 1);
         }
 
         $data = [
