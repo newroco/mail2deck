@@ -96,7 +96,10 @@ $description = $body;
     }
 
     function createCard($newcard, $data, $mailSender, $cleanedSubject, $inbox, $board = null){
-        $existingCardId = $newcard->findCardBySubject($cleanedSubject);
+        $existingCardId = null;
+        if ($cleanedSubject !== null && trim($cleanedSubject) !== '') {
+            $existingCardId = $newcard->findCardBySubject($cleanedSubject);
+        }
         $mailSender->origin .= "{$mailSender->userId}@{$mailSender->host}";
         if (!$existingCardId) {
             $response = $newcard->addCard($data, $mailSender->origin, $mailSender->host, $board);
