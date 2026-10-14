@@ -237,7 +237,7 @@ class DeckClass {
     //Identify the card by email subject
     public function findCardBySubject($subject) {
         $boards = $this->getAllBoards();
-        $cleanSubject = preg_replace("/\s[b|s|u]-'.*?'/", '', $subject);
+        $cleanSubject = preg_replace('/\s+[bsud]-([\'\"]).*?\1/i', '', $subject);
         foreach ($boards as $board) {
             $stacks =$this->getStacksByBoard($board->id);
             foreach ($stacks as $stack) {
