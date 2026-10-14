@@ -39,11 +39,16 @@ class AttachmentClass {
                     continue;
                 }
                 
-                $fp = fopen(getcwd() . '/attachments/' . $filename, "w+");
+                $safeFilename = basename(str_replace('\\', '/', $filename));
+                if ($safeFilename === '' || $safeFilename === '.' || $safeFilename === '..') {
+                    continue;
+                }
+                $filePath = getcwd() . '/attachments/' . $safeFilename;
+                $fp = fopen($filePath, "w+");
                 fwrite($fp, $attachments[$i]['attachment']);
                 fclose($fp);
 
-                array_push($attNames, $attachments[$i]['filename']);
+                $attNames[] = $safeFilename;
             }
         }
         return $attNames;
