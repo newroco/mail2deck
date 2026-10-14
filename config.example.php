@@ -16,6 +16,9 @@ define("DECODE_SPECIAL_CHARACTERS", true); //requires mbstring, if false special
 define("ASSIGN_SENDER", true); // if true, sender will be assigned to card if has NC account
 define("MAIL_NOTIFICATION", true); // if true, send notifications when a new card was created or an error occured
 define("DELETE_MAIL_AFTER_PROCESSING", true);
+define("FAILED_EMAIL_RETRY_COOLDOWN", 900); // seconds before retrying an email when both normal processing and error persistence fail
+define("FAILED_EMAIL_RETRY_MAX_COOLDOWN", 3600); // maximum retry delay for repeated hard failures
+define("FAILED_EMAIL_STATE_FILE", __DIR__ . "/var/failed_emails.json"); // local retry ledger for hard-failed emails
 define("NC_BOARD", [ //default Board to use in case it's not sent via email
     "DEFAULT_BOARD" => "Support",
     "OA_BOARD" => "OA Support",

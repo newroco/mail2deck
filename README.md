@@ -82,6 +82,7 @@ sudo vim config.php
 ```
 *You can refer to https://www.php.net/manual/en/function.imap-open.php for setting the value of MAIL_SERVER_FLAGS*
 *Set `MAIL_FROM` to a valid sender email address for notifications. `MAIL_USER` is only the IMAP/SMTP login username and may be something like `incoming`.*
+*When both normal processing and error-card persistence fail, mail2deck now leaves the source email unread and retries it later using the local `FAILED_EMAIL_STATE_FILE` backoff ledger instead of retrying every cron minute.*
 #### Add a cronjob to run mail2deck.
 ```
 sudo crontab -u incoming -e
@@ -98,6 +99,7 @@ cp config.example.php config.php
 nano config.php
 ```
 *Set `MAIL_FROM` to a valid sender email address for notifications. `MAIL_USER` is only the IMAP/SMTP login username and may be something like `incoming`.*
+*When both normal processing and error-card persistence fail, mail2deck now leaves the source email unread and retries it later using the local `FAILED_EMAIL_STATE_FILE` backoff ledger instead of retrying every cron minute.*
 
 Build your image locally
 ```

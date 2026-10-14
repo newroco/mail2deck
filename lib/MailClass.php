@@ -32,6 +32,10 @@ class MailClass {
         return imap_fetchbody($this->inbox, $email, $section);
     }
 
+    public function getUid($email) {
+        return imap_uid($this->inbox, $email);
+    }
+
     public function headerInfo($email) {
         $headerInfo = imap_headerinfo($this->inbox, $email);
         $additionalHeaderInfo = imap_fetchheader($this->inbox, $email);
