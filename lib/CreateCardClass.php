@@ -79,10 +79,7 @@ class CreateCardClass{
     }
 
     function mailDescription ($body, $base64encode, $attachments) {
-        $description = DECODE_SPECIAL_CHARACTERS ? quoted_printable_decode($body) : $body;
-        if ($base64encode) {
-            $description = base64_decode($description);
-        }
+$description = $body;
         if ($description != strip_tags($description)) {
             $description = (new ConvertToMD($description))->execute();
         }
