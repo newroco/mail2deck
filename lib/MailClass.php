@@ -105,20 +105,13 @@ class MailClass {
 
             $bodySupport = null;
             if ($response) {
-                 //Inline image
-                $description = $response->description;
-                $description = str_replace("\r\n", "\n", $description);
+                $descriptionFormatted = $this->renderSupportDescription($response->description);
+                $cardTitle = htmlspecialchars($response->title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+                $safeSender = htmlspecialchars($sender, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 
-                $pattern = '/\[(.*?)\]\((.*?)\)/';
-                if (preg_match($pattern, $description)) {
-                    $descriptionFormatted = preg_replace($pattern, '<a href="$2" target="_blank">$1</a>', $description);
-                } else {
-                    $descriptionFormatted = nl2br(htmlspecialchars($description));
-                }
-
-                $bodySupport = "<p><a href=\"" . NC_SERVER . "/index.php/apps/deck/board/{$response->board}/card/{$response->id}" . "\">{$response->title}</a></p>"
+                $bodySupport = "<p><a href=\"" . NC_SERVER . "/index.php/apps/deck/board/{$response->board}/card/{$response->id}" . "\">{$cardTitle}</a></p>"
                     ."<p>{$descriptionFormatted}</p>"
-                    ."<p>Sent by: {$sender} </p>";
+                    ."<p>Sent by: {$safeSender} </p>";
             }
 
 
@@ -188,5 +181,73 @@ class MailClass {
     public function markAsRead(int $email)
     {
         imap_setflag_full($this->inbox, $email, "\\Seen");
+    }
+
+    private function renderSupportDescription($description)
+    {
+        $description = str_replace("\r\n", "\n", (string) $description);
+        $output = '';
+        $offset = 0;
+        $pattern = '/\[([^\]]*)\]\(([^)]+)\)/';
+
+        if (preg_match_all($pattern, $description, $matches, PREG_OFFSET_CAPTURE)) {
+            foreach ($matches[0] as $index => $match) {
+                $matchText = $match[0];
+                $matchOffset = $match[1];
+                $label = $matches[1][$index][0];
+                $url = $matches[2][$index][0];
+
+                $output .= htmlspecialchars(substr($description, $offset, $matchOffset - $offset), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+
+                $normalizedUrl = $this->normalizeSupportUrl($url);
+                if ($normalizedUrl !== null) {
+                    $safeLabel = htmlspecialchars($label, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+                    $safeUrl = htmlspecialchars($normalizedUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+                    $output .= '<a href="' . $safeUrl . '" target="_blank" rel="noopener noreferrer">' . $safeLabel . '</a>';
+                } else {
+                    $output .= htmlspecialchars($matchText, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+                }
+
+                $offset = $matchOffset + strlen($matchText);
+            }
+        }
+
+        $output .= htmlspecialchars(substr($description, $offset), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+
+        return nl2br($output);
+    }
+
+    private function normalizeSupportUrl($url)
+    {
+        $url = trim($url);
+        if ($url === '') {
+            return null;
+        }
+
+        if ($url[0] === '<' && substr($url, -1) === '>') {
+            $url = substr($url, 1, -1);
+        }
+
+        $parsedUrl = parse_url($url);
+        if ($parsedUrl === false || !isset($parsedUrl['scheme'])) {
+            return null;
+        }
+
+        $scheme = strtolower($parsedUrl['scheme']);
+        if (in_array($scheme, ['http', 'https'], true)) {
+            return filter_var($url, FILTER_VALIDATE_URL) ? $url : null;
+        }
+
+        if ($scheme === 'mailto') {
+            $address = substr($url, 7);
+            return filter_var($address, FILTER_VALIDATE_EMAIL) ? $url : null;
+        }
+
+        if ($scheme === 'tel') {
+            $number = substr($url, 4);
+            return preg_match('/^[0-9+(). -]+$/', $number) ? $url : null;
+        }
+
+        return null;
     }
 }
