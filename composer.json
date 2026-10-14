@@ -1,6 +1,7 @@
 {
     "require": {
-        "league/html-to-markdown": "^5.1"
+        "league/html-to-markdown": "^5.1",
+        "phpmailer/phpmailer": "^6.9"
     },
     "autoload": {
         "psr-4": {
