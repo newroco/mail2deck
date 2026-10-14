@@ -149,8 +149,8 @@ class DeckClass {
         $imageUrls = [];
         for ($i = 0; $i < count($attachments); $i++) {
             $file = $fullPath . $attachments[$i];
-            if (!file_exists($file)) {
-                die("Eroare: Fișierul $file nu există!");
+            if (!is_file($file)) {
+                throw new \RuntimeException("Attachment file does not exist: $file");
             }
             $data = array(
                 'file' => new \CURLFile($file)
