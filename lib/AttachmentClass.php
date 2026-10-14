@@ -43,12 +43,15 @@ class AttachmentClass {
                 if ($safeFilename === '' || $safeFilename === '.' || $safeFilename === '..') {
                     continue;
                 }
-                $filePath = getcwd() . '/attachments/' . $safeFilename;
-                $fp = fopen($filePath, "w+");
+                $filePath = getcwd() . '/attachments/' . uniqid('att_', true);
+                $fp = fopen($filePath, "wb");
                 fwrite($fp, $attachments[$i]['attachment']);
                 fclose($fp);
 
-                $attNames[] = $safeFilename;
+                $attNames[] = [
+                    'path' => $filePath,
+                    'name' => $safeFilename,
+                ];
             }
         }
         return $attNames;

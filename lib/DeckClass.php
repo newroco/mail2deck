@@ -153,21 +153,23 @@ class DeckClass {
 
     //Add a new attachment
     public function addAttachments($card, $attachments) {
-        $fullPath = getcwd() . "/attachments/"; //get full path to attachments directory
         $imageUrls = [];
         for ($i = 0; $i < count($attachments); $i++) {
-            $file = $fullPath . $attachments[$i];
+            $attachment = $attachments[$i];
+            $file = is_array($attachment) ? $attachment['path'] : getcwd() . "/attachments/" . $attachment;
+            $displayName = is_array($attachment) ? $attachment['name'] : $attachment;
+
             if (!is_file($file)) {
                 throw new \RuntimeException("Attachment file does not exist: $file");
             }
             $data = array(
-                'file' => new \CURLFile($file)
+                'file' => new \CURLFile($file, mime_content_type($file) ?: 'application/octet-stream', $displayName)
             );
             $response = $this->apiCall("POST", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/{$card->board}/stacks/{$card->stack}/cards/{$card->id}/attachments?type=file", $data, true);
             if (isset($response->extendedData->fileid)) {
                 $imageUrls[] = [
                     'fileid' => $response->extendedData->fileid,
-                    'filename' => $attachments[$i]
+                    'filename' => $displayName
                 ];
             }
             unlink($file);
