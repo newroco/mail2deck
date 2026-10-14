@@ -250,15 +250,116 @@ class DeckClass {
     //Assign a user to the card
     public function assignUser($card, $mailUser)
     {
-        $url = NC_SERVER;
-        $allUsers= $this->apiCall("GET",$url."/ocs/v1.php/cloud/users"); //nextcloud user list
-        foreach ($allUsers->ocs->data->users as $userId) {
-            $userDetails = $this->apiCall("GET",$url."/ocs/v1.php/cloud/users/{$userId}");//search in the nextcloud user list
-            if (isset($userDetails->ocs->data->email) && $userDetails->ocs->data->email == $mailUser) {
-                $this->apiCall("PUT", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/{$card->board}/stacks/{$card->stack}/cards/{$card->id}/assignUser", ['userId' => (string)$userId]);
-                break;
+        $board = $this->getBoardById($card->board);
+        if ($board === null) {
+            return;
+        }
+
+        $userId = $this->resolveUserIdByEmail($mailUser, $board);
+        if ($userId === null) {
+            return;
+        }
+
+        $this->apiCall("PUT", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/{$card->board}/stacks/{$card->stack}/cards/{$card->id}/assignUser", ['userId' => (string) $userId]);
+    }
+
+    private function resolveUserIdByEmail($mailUser, $board = null)
+    {
+        $mailUser = strtolower(trim((string) $mailUser));
+        if ($mailUser === '') {
+            return null;
+        }
+
+        $boardUserIds = $board !== null ? $this->getAssignableUserIdsForBoard($board) : null;
+
+        $cachedUserId = $this->lookupUserIdFromCache($mailUser);
+        if ($cachedUserId !== null && ($boardUserIds === null || in_array($cachedUserId, $boardUserIds, true))) {
+            return $cachedUserId;
+        }
+
+        $searchResults = $this->apiCall("GET", NC_SERVER . "/ocs/v1.php/cloud/users?search=" . rawurlencode($mailUser), null, false, true);
+        foreach (($searchResults->ocs->data->users ?? []) as $userId) {
+            $userId = (string) $userId;
+            if ($boardUserIds !== null && !in_array($userId, $boardUserIds, true)) {
+                continue;
+            }
+
+            $userDetails = $this->apiCall("GET", NC_SERVER . "/ocs/v1.php/cloud/users/{$userId}", null, false, true);
+            if (isset($userDetails->ocs->data->email) && strtolower(trim((string) $userDetails->ocs->data->email)) === $mailUser) {
+                $this->storeUserEmailCache($mailUser, $userId);
+                return $userId;
             }
         }
+
+        return null;
+    }
+
+    private function getBoardById($boardId)
+    {
+        foreach ($this->getAllBoards() as $board) {
+            if ((string) $board->id === (string) $boardId) {
+                return $board;
+            }
+        }
+
+        return null;
+    }
+
+    private function getAssignableUserIdsForBoard($board)
+    {
+        $userIds = [];
+
+        if (!isset($board->acl) || !is_iterable($board->acl)) {
+            return $userIds;
+        }
+
+        foreach ($board->acl as $acl) {
+            if (!empty($acl->permissionEdit) && isset($acl->participant->uid)) {
+                $userIds[] = (string) $acl->participant->uid;
+            }
+        }
+
+        return array_values(array_unique($userIds));
+    }
+
+    private function lookupUserIdFromCache($mailUser)
+    {
+        $cache = $this->loadUserEmailCache();
+        return $cache[$mailUser] ?? null;
+    }
+
+    private function storeUserEmailCache($mailUser, $userId)
+    {
+        $cache = $this->loadUserEmailCache();
+        $cache[$mailUser] = $userId;
+        $this->saveUserEmailCache($cache);
+    }
+
+    private function loadUserEmailCache()
+    {
+        $cacheFile = __DIR__ . '/../var/user-email-cache.json';
+        if (!is_file($cacheFile)) {
+            return [];
+        }
+
+        $contents = file_get_contents($cacheFile);
+        if ($contents === false || trim($contents) === '') {
+            return [];
+        }
+
+        $decoded = json_decode($contents, true);
+        return is_array($decoded) ? $decoded : [];
+    }
+
+    private function saveUserEmailCache(array $cache)
+    {
+        $cacheFile = __DIR__ . '/../var/user-email-cache.json';
+        $directory = dirname($cacheFile);
+        if (!is_dir($directory)) {
+            mkdir($directory, 0777, true);
+        }
+
+        file_put_contents($cacheFile, json_encode($cache, JSON_PRETTY_PRINT));
     }
 
     private function checkBotPermissions($board) {
