@@ -246,10 +246,7 @@ class DeckClass {
     //Assign a user to the card
     public function assignUser($card, $mailUser)
     {
-        $adminUser = urlencode(NC_ADMIN_USER);
-        $adminPassword = urlencode(NC_ADMIN_PASSWORD);
-
-        $url = "https://{$adminUser}:{$adminPassword}@" . NC_HOST;
+        $url = NC_SERVER;
         $allUsers= $this->apiCall("GET",$url."/ocs/v1.php/cloud/users"); //nextcloud user list
         foreach ($allUsers->ocs->data->users as $userId) {
             $userDetails = $this->apiCall("GET",$url."/ocs/v1.php/cloud/users/{$userId}");//search in the nextcloud user list
