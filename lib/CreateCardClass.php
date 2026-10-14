@@ -23,30 +23,49 @@ class CreateCardClass{
     }
 
     function fetchMailBody($structure,$inbox, $emailId) {
-        return $this->getHtmlPart($inbox, $emailId, $structure, '');
+        $plainTextFallback = null;
+        $htmlBody = $this->getHtmlPart($inbox, $emailId, $structure, '', $plainTextFallback);
+
+        return $htmlBody !== null ? $htmlBody : $plainTextFallback;
     }
-    function getHtmlPart($inbox, $emailId, $structure, $prefix) {
+    function getHtmlPart($inbox, $emailId, $structure, $prefix, &$plainTextFallback = null) {
         if (!isset($structure->parts)) {
-            $body = $inbox->fetchMessageBody($emailId, 1);
+            $partIndex = $prefix ?: 1;
+            $body = $inbox->fetchMessageBody($emailId, $partIndex);
             $body = $this->decodeBody($body, $structure->encoding);
-            return $body;
+
+            if (isset($structure->subtype) && strtoupper($structure->subtype) == 'HTML') {
+                return $body;
+            }
+
+            if ($plainTextFallback === null && isset($structure->subtype) && strtoupper($structure->subtype) == 'PLAIN') {
+                $plainTextFallback = $body;
+            }
+
+            return null;
         }
 
         foreach ($structure->parts as $index => $part) {
             $partIndex = $prefix ? "$prefix." . ($index + 1) : ($index + 1);
 
             if (isset($part->subtype) && strtoupper($part->subtype) == 'HTML') {
-                $body = $inbox->fetchMessageBody($emailId, $partIndex);;
+                $body = $inbox->fetchMessageBody($emailId, $partIndex);
                 return $this->decodeBody($body, $part->encoding);
             }
 
-            if (isset($part->subtype) && (strtoupper($part->subtype) == 'RELATED' || strtoupper($part->subtype) == 'ALTERNATIVE')) {
-                $result = $this->getHtmlPart($inbox, $emailId, $part, $partIndex);
+            if ($plainTextFallback === null && isset($part->subtype) && strtoupper($part->subtype) == 'PLAIN') {
+                $body = $inbox->fetchMessageBody($emailId, $partIndex);
+                $plainTextFallback = $this->decodeBody($body, $part->encoding);
+            }
+
+            if (isset($part->parts)) {
+                $result = $this->getHtmlPart($inbox, $emailId, $part, $partIndex, $plainTextFallback);
                 if ($result) {
                     return $result;
                 }
             }
         }
+
         return null;
     }
 
