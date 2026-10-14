@@ -9,19 +9,7 @@ class AttachmentClass {
         $attNames = array();
 
         if (isset($structure->parts) && count($structure->parts)) {
-            $parentIndex = null;
-        foreach ($structure->parts as $index => $part) {
-            $partIndex = $parentIndex ? strval($parentIndex) . '.' . ($index + 1) : ($index + 1);
-
-                if (isset($part->parts) && count($part->parts) > 1) {
-                    $result= $this->processAttachment($part->parts, $inbox, $emails, $partIndex);//subpart exists in the structure
-                }else{
-                    $result= $this->processAttachment([$part], $inbox, $emails, $partIndex);
-                }
-                 if ($result) {
-                    $attachments = array_merge($attachments, $result);
-                }
-            }
+            $attachments = array_merge($attachments, $this->collectAttachments($structure->parts, $inbox, $emails, ''));
         }
 
         //Add formatted attachments
@@ -57,9 +45,16 @@ class AttachmentClass {
         return $attNames;
     }
 
-    function processAttachment($parts, $inbox, $emails, $index) {
+    function collectAttachments($parts, $inbox, $emails, $prefix) {
         $attachments = array();
         foreach ($parts as $j => $part) {
+            $partIndex = $prefix ? $prefix . '.' . ($j + 1) : ($j + 1);
+
+            if (isset($part->parts) && count($part->parts)) {
+                $attachments = array_merge($attachments, $this->collectAttachments($part->parts, $inbox, $emails, $partIndex));
+                continue;
+            }
+
             if ($part->ifdparameters || $part->ifparameters) {
                 $parameters = $part->ifdparameters ? $part->dparameters : $part->parameters;
                 $attributeName = $part->ifdparameters ? 'filename' : 'name';
@@ -69,13 +64,9 @@ class AttachmentClass {
                         $attachment['is_attachment'] = true;
                         $attachment[$attributeName] = $object->value;
 
-                        $partindex = count($parts) > 1
-                            ? $index . "." . ($j + 1)
-                            : (string) $index;
-
-                        $attachment['attachment']= $inbox->fetchMessageBody($emails,$partindex);
-                        if(! $attachment['attachment']){
-                            $attachment['attachment']= $inbox->fetchMessageBody($emails,$index);
+                        $attachment['attachment'] = $inbox->fetchMessageBody($emails, $partIndex);
+                        if (! $attachment['attachment']) {
+                            $attachment['attachment'] = $inbox->fetchMessageBody($emails, $partIndex);
                         }
 
                         if ($part->encoding == 3) { // BASE64
