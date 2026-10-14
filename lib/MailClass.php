@@ -99,20 +99,23 @@ class MailClass {
                 $subject = "A new card could not be created!";
             }
 
-             //Inline image
-            $description = $response->description;
-            $description = str_replace("\r\n", "\n", $description);
+            $bodySupport = null;
+            if ($response) {
+                 //Inline image
+                $description = $response->description;
+                $description = str_replace("\r\n", "\n", $description);
 
-            $pattern = '/\[(.*?)\]\((.*?)\)/';
-            if (preg_match($pattern, $description)) {
-                $descriptionFormatted = preg_replace( $pattern,'<a href="$2" target="_blank">$1</a>',$description);
-            } else {
-                $descriptionFormatted = nl2br(htmlspecialchars($description));
+                $pattern = '/\[(.*?)\]\((.*?)\)/';
+                if (preg_match($pattern, $description)) {
+                    $descriptionFormatted = preg_replace($pattern, '<a href="$2" target="_blank">$1</a>', $description);
+                } else {
+                    $descriptionFormatted = nl2br(htmlspecialchars($description));
+                }
+
+                $bodySupport = "<p><a href=\"" . NC_SERVER . "/index.php/apps/deck/board/{$response->board}/card/{$response->id}" . "\">{$response->title}</a></p>"
+                    ."<p>{$descriptionFormatted}</p>"
+                    ."<p>Sent by: {$sender} </p>";
             }
-
-            $bodySupport="<p><a href=\"" . NC_SERVER . "/index.php/apps/deck/board/{$response->board}/card/{$response->id}" . "\">{$response->title}</a></p>"
-                ."<p>{$descriptionFormatted}</p>"
-                ."<p>Sent by: {$sender} </p>";
 
 
             /**
@@ -128,7 +131,7 @@ class MailClass {
             $mail->send();
                 echo "Mail sent successfully to $sender.";
 
-            if(MAIL_SUPPORT != ''){
+            if(MAIL_SUPPORT != '' && $bodySupport !== null){
                 // Clean recipients and attachments for the next email
                 $mail->clearAddresses();
                 $mail->clearAttachments();
