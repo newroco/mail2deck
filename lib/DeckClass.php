@@ -104,6 +104,14 @@ class DeckClass {
                     return $a->order <=> $b->order;
                 });
                 $stackId = $stacks[0]->id;
+                if (isset($stackFromMail)) {
+                    foreach ($stacks as $stack) {
+                        if (strcasecmp($stack->title, $stackFromMail) === 0) {
+                            $stackId = $stack->id;
+                            break;
+                        }
+                    }
+                }
             }
         } else {
             return false;
