@@ -38,7 +38,7 @@ for ($j = 0; $j < count($emails) && $j < 5; $j++) {
         $board = $createCardClass->extractBoardName($overview);
 
         $mailSender = new stdClass();
-        $data = $createCardClass->createMailData($overview, $mailSender);
+        $data = $createCardClass->createMailData($overview, new stdClass());
         $body = $createCardClass->fetchMailBody($structure, $inbox, $emails[$j]);
 
         $newcard = new DeckClass();
