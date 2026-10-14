@@ -66,11 +66,9 @@ class AttachmentClass {
                         $attachment['is_attachment'] = true;
                         $attachment[$attributeName] = $object->value;
 
-                        if( $part->disposition == "attachment"){
-                            $partindex= $index;
-                        }else{
-                            $partindex= $index . "." . ($j + 1);
-                        }
+                        $partindex = count($parts) > 1
+                            ? $index . "." . ($j + 1)
+                            : (string) $index;
 
                         $attachment['attachment']= $inbox->fetchMessageBody($emails,$partindex);
                         if(! $attachment['attachment']){
