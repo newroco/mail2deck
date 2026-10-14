@@ -86,7 +86,7 @@ class CreateCardClass{
             $response = $newcard->addCard($data, $mailSender->origin, $mailSender->host, $board);
             error_log("New card created with response: " . json_encode($response));
 
-            if ($response && defined('ROCKETCHAT_WEBHOOK')){
+            if ($response && defined('ROCKETCHAT_WEBHOOK') && ROCKETCHAT_WEBHOOK !== '') {
                 $this->notifyRocketChat($response);
             }
             
