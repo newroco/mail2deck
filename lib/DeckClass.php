@@ -318,17 +318,8 @@ class DeckClass {
 
     private function getAssignableUserIdsForBoard($board)
     {
-        $userIds = [];
-
-        if (!isset($board->acl) || !is_iterable($board->acl)) {
-            return $userIds;
-        }
-
-        foreach ($board->acl as $acl) {
-            if (!empty($acl->permissionEdit) && isset($acl->participant->uid)) {
-                $userIds[] = (string) $acl->participant->uid;
-            }
-        }
+        $boardDetails = $this->apiCall("GET", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/{$board->id}");
+        $userIds = array_map(function ($user) { return (string) $user->uid; }, $boardDetails->users);
 
         return array_values(array_unique($userIds));
     }

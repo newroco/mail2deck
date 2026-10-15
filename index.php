@@ -161,6 +161,8 @@ foreach ($emails as $emailNumber) {
                                     . "Error: " . ($e->getMessage() ?? 'Unknown error') . "\n\n"
                                     . "Original message:\n" . ($body ?? 'No content');
 
+            $errorData->type = "plain";
+            $errorData->order = -time();
             $errorData->attachments = [];
 
             $mailSender = new stdClass();

@@ -39,6 +39,7 @@ class AttachmentClass {
                 $attNames[] = [
                     'path' => $filePath,
                     'name' => $safeFilename,
+                    'cid' => $attachments[$i]['cid'] ?? null,
                 ];
             }
         }
@@ -62,7 +63,7 @@ class AttachmentClass {
 
                 foreach ($parameters as $object) {
                     if (strtolower($object->attribute) == strtolower($attributeName)) {
-                        $attachment['is_attachment'] = true;
+                        $attachment = ['is_attachment' => true];
                         $attachment[$attributeName] = $object->value;
                         if ($contentId !== null) {
                             $attachment['cid'] = $contentId;
