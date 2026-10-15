@@ -16,19 +16,23 @@ class ConvertToMD {
         $this->html = $html;
     }
 
-    public function execute()
+    public function execute($stripQuotedReplies = true)
     {
         $markdown = $this->converter->convert($this->html);
 
-        return $this->cleanupMarkdown($markdown);
+        return $this->cleanupMarkdown($markdown, $stripQuotedReplies);
     }
 
-    protected function cleanupMarkdown($markdown)
+    protected function cleanupMarkdown($markdown, $stripQuotedReplies = true)
     {
         $markdown = html_entity_decode($markdown, ENT_QUOTES | ENT_HTML5, 'UTF-8');
         $markdown = preg_replace("/\r\n?/", "\n", $markdown);
-        $markdown = $this->stripQuotedReplies($markdown);
-        $markdown = $this->stripSignature($markdown);
+
+        if ($stripQuotedReplies) {
+            $markdown = $this->stripQuotedReplies($markdown);
+            $markdown = $this->stripSignature($markdown);
+        }
+
         $markdown = preg_replace("/\n{3,}/", "\n\n", $markdown);
 
         return trim($markdown);
@@ -37,7 +41,7 @@ class ConvertToMD {
     protected function stripQuotedReplies($markdown)
     {
         $patterns = [
-            "/\n-{2,}\s*Forwarded message\s*-{2,}\s*\n/i",
+            "/(?:^|\n)(?:\\\\)?[-*_]{2,}\s*Forwarded message\s*(?:\\\\)?[-*_]{2,}(?:\s*\n|$)/i",
             "/\nOn .+ wrote:\s*\n/i",
             "/\n(?:\*\*)?From:(?:\*\*)?[^\n]*(?:\n(?:\*\*)?(?:Sent|Date|To|Cc|Subject):(?:\*\*)?[^\n]*){2,}/i",
         ];

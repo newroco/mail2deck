@@ -441,13 +441,17 @@ class DeckClass {
 
     //Extract the initial message from all forwarded content
     public function extractForwardedContent($body) {
-        $separator = "---------- Forwarded message ---------";
-        $position = strpos($body, $separator);
-        if ($position !== false) {
-            $body = substr($body, 0, $position);
+        $body = trim((string) $body);
+        if ($body === '') {
+            return '';
         }
-        $body = trim($body);
-        return $body;
+
+        $separatorPattern = '/(?:\\)?[-*_]{2,}\s*Forwarded message\s*(?:\\)?[-*_]{2,}/i';
+        if (preg_match($separatorPattern, $body, $matches, PREG_OFFSET_CAPTURE)) {
+            $body = substr($body, 0, $matches[0][1]);
+        }
+
+        return trim($body);
     }
 
     //Extract the initial subject from the description

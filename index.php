@@ -134,7 +134,7 @@ foreach ($emails as $emailNumber) {
 
         $newcard = new DeckClass();
         $data->attachments = $attNames;
-        $data->description = $createCardClass->mailDescription($body, $base64encode, $attNames);
+        $data->description = $createCardClass->mailDescription($body, $base64encode, $attNames, false);
 
         $mailSender->userId = $overview->reply_to[0]->mailbox ?? "unknown";
         $mailSender->host = $overview->reply_to[0]->host ?? "unknown";

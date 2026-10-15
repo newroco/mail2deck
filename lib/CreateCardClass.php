@@ -86,10 +86,10 @@ class CreateCardClass{
         return $body;
     }
 
-    function mailDescription ($body, $base64encode, $attachments) {
+    function mailDescription ($body, $base64encode, $attachments, $stripQuotedReplies = true) {
         $description = $body;
         if ($description != strip_tags($description)) {
-            $description = (new ConvertToMD($description))->execute();
+            $description = (new ConvertToMD($description))->execute($stripQuotedReplies);
         }
         return $description;
     }
@@ -133,6 +133,7 @@ class CreateCardClass{
             }
         }else{
             $cleanedDescription = $newcard->extractForwardedContent($data->description);
+            $cleanedDescription = (new ConvertToMD($cleanedDescription))->execute();
             $response = $newcard->addCommentToCard($existingCardId, $cleanedDescription);
             error_log("Comment added with response: " . json_encode($response));
         }
