@@ -29,7 +29,9 @@ class MailClass {
     }
 
     public function fetchMessageBody($email, $section) {
-        return imap_fetchbody($this->inbox, $email, $section);
+        // FT_PEEK prevents IMAP from setting the \Seen flag while we inspect the body.
+        // This preserves unread messages when the retry ledger is recorded after a failed processing attempt.
+        return imap_fetchbody($this->inbox, $email, $section, FT_PEEK);
     }
 
     public function getUid($email) {
