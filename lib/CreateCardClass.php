@@ -106,7 +106,7 @@ class CreateCardClass{
     function createCard($newcard, $data, $mailSender, $cleanedSubject, $inbox, $board = null){
         $existingCardId = null;
         if ($cleanedSubject !== null && trim($cleanedSubject) !== '') {
-            $existingCardId = $newcard->findCardBySubject($cleanedSubject);
+            $existingCardId = $newcard->findCardBySubject($cleanedSubject, $board);
         }
         $mailSender->origin .= "{$mailSender->userId}@{$mailSender->host}";
         if (!$existingCardId) {

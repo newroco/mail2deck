@@ -387,18 +387,30 @@ class DeckClass {
         return $stack->cards ?? [];
     }
     //Identify the card by email subject
-    public function findCardBySubject($subject) {
+    public function findCardBySubject($subject, $board = null) {
         $boards = $this->getAllBoards();
+        if ($board !== null && $board !== '') {
+            $boardName = trim((string) $board);
+            $filteredBoards = [];
+            foreach ($boards as $candidateBoard) {
+                if ((string) $candidateBoard->id === $boardName || strcasecmp(trim((string) $candidateBoard->title), $boardName) === 0) {
+                    $filteredBoards[] = $candidateBoard;
+                    break;
+                }
+            }
+            $boards = $filteredBoards;
+        }
+
         $cleanSubject = preg_replace('/\s+[bsud]-([\'\"]).*?\1/i', '', $subject);
-        foreach ($boards as $board) {
-            $stacks =$this->getStacksByBoard($board->id);
+        foreach ($boards as $boardEntry) {
+            $stacks = $this->getStacksByBoard($boardEntry->id);
             foreach ($stacks as $stack) {
                 $cards = $this->getCardsByStack($stack);
                 foreach ($cards as $card) {
                     if (strtolower(trim($card->title)) == strtolower(trim($cleanSubject))) {
                         return [
                             'cardId' => $card->id,
-                            'boardId' => $board->id
+                            'boardId' => $boardEntry->id
                         ];
                     }
                 }
