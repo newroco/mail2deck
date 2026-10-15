@@ -39,6 +39,7 @@ class AttachmentClass {
                 $attNames[] = [
                     'path' => $filePath,
                     'name' => $safeFilename,
+                    'cid' => $attachments[$i]['cid'] ?? null,
                 ];
             }
         }
