@@ -202,6 +202,15 @@ class DeckClass {
 
     //Add a new attachment
     public function addAttachments($card, $attachments) {
+        $location = $this->resolveCardLocation($card);
+        $cardId = $location['cardId'];
+        $boardId = $location['boardId'];
+        $stackId = $location['stackId'];
+
+        if ($cardId === null || $boardId === null || $stackId === null) {
+            throw new \RuntimeException("Card location is incomplete; cannot upload attachments.");
+        }
+
         $imageUrls = [];
         for ($i = 0; $i < count($attachments); $i++) {
             $attachment = $attachments[$i];
@@ -214,7 +223,7 @@ class DeckClass {
             $data = array(
                 'file' => new \CURLFile($file, mime_content_type($file) ?: 'application/octet-stream', $displayName)
             );
-            $response = $this->apiCall("POST", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/{$card->board}/stacks/{$card->stack}/cards/{$card->id}/attachments?type=file", $data, true);
+            $response = $this->apiCall("POST", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/{$boardId}/stacks/{$stackId}/cards/{$cardId}/attachments?type=file", $data, true);
             if (isset($response->extendedData->fileid)) {
                 $imageUrls[] = [
                     'fileid' => $response->extendedData->fileid,
@@ -225,6 +234,106 @@ class DeckClass {
             unlink($file);
         }
         return $imageUrls;
+    }
+
+    private function resolveCardLocation($card) {
+        if (is_array($card)) {
+            $cardId = $card['cardId'] ?? $card['id'] ?? null;
+            $boardId = $card['boardId'] ?? $card['board'] ?? null;
+            $stackId = $card['stackId'] ?? $card['stack'] ?? null;
+            if ($cardId !== null && ($boardId !== null || $stackId !== null)) {
+                return [
+                    'cardId' => $cardId,
+                    'boardId' => $boardId,
+                    'stackId' => $stackId,
+                ];
+            }
+        }
+
+        if (is_object($card)) {
+            return [
+                'cardId' => $card->id ?? null,
+                'boardId' => $card->board ?? null,
+                'stackId' => $card->stack ?? null,
+            ];
+        }
+
+        return [
+            'cardId' => null,
+            'boardId' => null,
+            'stackId' => null,
+        ];
+    }
+
+    public function replaceInlineAttachmentLinks($markdown, $uploadedAttachments) {
+        if (!is_array($uploadedAttachments) || empty($uploadedAttachments)) {
+            return trim((string) $markdown);
+        }
+
+        $cidMap = [];
+        foreach ($uploadedAttachments as $attachment) {
+            if (!is_array($attachment)) {
+                continue;
+            }
+
+            $cid = isset($attachment['cid']) && trim((string) $attachment['cid']) !== '' ? trim((string) $attachment['cid']) : null;
+            if ($cid === null) {
+                continue;
+            }
+
+            $fileId = $attachment['fileid'] ?? null;
+            if ($fileId !== null && $fileId !== '') {
+                $cidMap[$cid] = NC_SERVER . "/f/{$fileId}";
+            }
+        }
+
+        if (!empty($cidMap)) {
+            $markdown = preg_replace_callback('/!\[([^\]]*)\]\(cid:([^\)]+)\)/i', function ($matches) use ($cidMap) {
+                $cid = trim($matches[2]);
+                $url = $cidMap[$cid] ?? null;
+                if ($url === null) {
+                    return $matches[0];
+                }
+
+                $label = trim($matches[1]);
+                return '[' . ($label !== '' ? $label : 'image') . '](' . $url . ')';
+            }, $markdown);
+
+            $markdown = preg_replace_callback('/<img[^>]+src=["\']cid:([^"\']+)["\'][^>]*>/i', function ($matches) use ($cidMap) {
+                $cid = trim($matches[1]);
+                $url = $cidMap[$cid] ?? null;
+                if ($url === null) {
+                    return $matches[0];
+                }
+
+                return '[image](' . $url . ')';
+            }, $markdown);
+        }
+
+        $linkList = [];
+        foreach ($uploadedAttachments as $attachment) {
+            if (!is_array($attachment)) {
+                continue;
+            }
+
+            $fileId = $attachment['fileid'] ?? null;
+            $filename = $attachment['filename'] ?? ($attachment['name'] ?? 'Attachment');
+            if ($fileId === null || $fileId === '') {
+                continue;
+            }
+
+            $linkList[] = '- [' . $filename . '](' . NC_SERVER . "/f/{$fileId})";
+        }
+
+        if (!empty($linkList)) {
+            $markdown = trim((string) $markdown);
+            if ($markdown !== '') {
+                $markdown .= "\n\n";
+            }
+            $markdown .= implode("\n", $linkList);
+        }
+
+        return trim((string) $markdown);
     }
 
     public function updateCardDescription($card, $imageUrls) {
@@ -410,7 +519,8 @@ class DeckClass {
                     if (strtolower(trim($card->title)) == strtolower(trim($cleanSubject))) {
                         return [
                             'cardId' => $card->id,
-                            'boardId' => $boardEntry->id
+                            'boardId' => $boardEntry->id,
+                            'stackId' => $stack->id,
                         ];
                     }
                 }

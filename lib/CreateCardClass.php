@@ -134,6 +134,12 @@ class CreateCardClass{
         }else{
             $cleanedDescription = $newcard->extractForwardedContent($data->description);
             $cleanedDescription = (new ConvertToMD($cleanedDescription))->execute();
+
+            if (!empty($data->attachments)) {
+                $uploadedAttachments = $newcard->addAttachments($existingCardId, $data->attachments);
+                $cleanedDescription = $newcard->replaceInlineAttachmentLinks($cleanedDescription, $uploadedAttachments);
+            }
+
             $response = $newcard->addCommentToCard($existingCardId, $cleanedDescription);
             error_log("Comment added with response: " . json_encode($response));
         }
