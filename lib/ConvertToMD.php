@@ -57,56 +57,70 @@ class ConvertToMD {
 
     protected function stripSignature($markdown)
     {
-        $lines = explode("\n", trim($markdown));
-        $lineCount = count($lines);
+        $normalized = preg_replace('/\r\n?/', "\n", trim($markdown));
+        $patterns = [
+            '/(?:^|\n)\s*(?:--|[-_]{5,})\s*(?:\n|$)/u',
+            '/(?<![A-Za-z0-9])--\s*(?=[A-Z])/u',
+        ];
 
-        if ($lineCount < 4) {
-            return trim($markdown);
-        }
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $normalized, $match, PREG_OFFSET_CAPTURE)) {
+                $offset = $match[0][1];
+                $suffix = trim(substr($normalized, $offset + strlen($match[0][0])));
 
-        for ($index = 2; $index < $lineCount; $index++) {
-            if (!$this->isSignatureBoundary($lines, $index)) {
-                continue;
-            }
-
-            $tail = array_slice($lines, $index);
-            if ($this->signatureScore($tail) >= 4) {
-                return trim(implode("\n", array_slice($lines, 0, $index)));
+                if ($this->hasSignatureEvidence($suffix)) {
+                    return trim(substr($normalized, 0, $offset));
+                }
             }
         }
 
         return trim($markdown);
     }
 
-    protected function isSignatureBoundary(array $lines, $index)
+    protected function hasSignatureEvidence($text)
     {
-        $current = trim($lines[$index]);
-        $previous = trim($lines[$index - 1]);
-
-        if ($current === '--' || $current === '-- ') {
-            return true;
-        }
-
-        if (preg_match('/^[_-]{5,}$/', $current)) {
-            return true;
-        }
-
-        if ($previous !== '' || $current === '') {
+        $text = trim((string) $text);
+        if ($text === '') {
             return false;
         }
 
-        if ($this->looksLikeSignatureLine($current)) {
+        $lines = preg_split('/\r?\n/', $text);
+        $nameFound = false;
+        $evidenceCount = 0;
+
+        foreach ($lines as $line) {
+            $candidate = trim((string) $line);
+            if ($candidate === '' || preg_match('/^(?:--|[-_]{5,})$/', $candidate)) {
+                continue;
+            }
+
+            if (preg_match('/^[A-Z][\p{L}\'\-]+(?:\s+[A-Z][\p{L}\'\-]+){1,3}$/u', $candidate)) {
+                $nameFound = true;
+            }
+
+            if (preg_match('/https?:\/\/|www\./i', $candidate)) {
+                $evidenceCount++;
+            }
+            if (preg_match('/\b(?:tel:|mob:|phone:|mobile:|\+\d{2,})\b|@[A-Z0-9._%+-]+\.[A-Z]{2,}|\b(LinkedIn|Facebook|Instagram|Twitter|YouTube|X)\b/i', $candidate)) {
+                $evidenceCount++;
+            }
+            if (preg_match('/\b(ltd\.?|limited|inc\.?|llc|administrator|officer|manager|director|department|team)\b/i', $candidate)) {
+                $evidenceCount++;
+            }
+        }
+
+        if ($nameFound && $evidenceCount >= 2) {
             return true;
         }
 
-        return preg_match("/^[A-Z][\\p{L}'-]+(?:\\s+[A-Z][\\p{L}'-]+){1,3}$/u", $current)
-            && $this->signatureScore(array_slice($lines, $index, 6)) >= 2;
+        $compact = preg_replace('/\s+/', ' ', $text);
+        return preg_match('/^[A-Z][\p{L}\'\-]+(?:\s+[A-Z][\p{L}\'\-]+){1,3}\s+(?:LinkedIn|Facebook|Instagram|Twitter|YouTube|X|https?:\/\/|www\.|@[-A-Z0-9._%+]+\.[A-Z]{2,}|\+\d)/iu', $compact) && preg_match('/(?:https?:\/\/|www\.|\+\d{2,}|LinkedIn|Facebook|Instagram|Twitter|YouTube|X|@[-A-Z0-9._%+]+\.[A-Z]{2,})/i', $compact);
     }
 
     protected function looksLikeSignatureLine($line)
     {
         return (bool) preg_match(
-            '/\b(LinkedIn|Facebook|Instagram|Twitter|YouTube|X|tel:|mob:|phone:|mobile:|ltd\.?|limited|inc\.?|llc|administrator|officer|manager|director|department|team)\b|https?:\/\/|www\.|\[[^\]]+\]\((?:https?:\/\/|<https?:\/\/)|@[A-Z0-9._%+-]+\.[A-Z]{2,}|(?:^|[| ])(?:T|M)\d|cid:/i',
+            '/\b(LinkedIn|Facebook|Instagram|Twitter|YouTube|X|tel:|mob:|phone:|mobile:|ltd\.?|limited|inc\.?|llc|administrator|officer|manager|director|department|team)\b|\[[^\]]+\]\((?:https?:\/\/|<https?:\/\/)|@[A-Z0-9._%+-]+\.[A-Z]{2,}|(?:^|[| ])(?:T|M)\d|cid:/i',
             $line
         );
     }
@@ -128,7 +142,7 @@ class ConvertToMD {
             $score += 1;
         }
 
-        if (preg_match('/https?:\/\/|www\.|@[A-Z0-9._%+-]+\.[A-Z]{2,}/i', $text)) {
+        if (preg_match('/https?:\/\/|www\./i', $text) && preg_match('/\b(?:LinkedIn|Facebook|Instagram|Twitter|YouTube|X|tel:|mob:|phone:|mobile:|@[A-Z0-9._%+-]+\.[A-Z]{2,})\b/i', $text)) {
             $score += 1;
         }
 
