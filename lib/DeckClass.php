@@ -58,11 +58,20 @@ class DeckClass {
         }
 
         if ($userapi) {
-            $xmlResponse = simplexml_load_string($response);
-            if ($xmlResponse === false) {
-                throw new \RuntimeException("Failed to decode XML response from {$endpoint}");
+            $trimmedResponse = trim($response);
+            if ($trimmedResponse !== '') {
+                $jsonResponse = json_decode($trimmedResponse);
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    return $jsonResponse;
+                }
             }
-            return $xmlResponse;
+
+            $xmlResponse = simplexml_load_string($trimmedResponse);
+            if ($xmlResponse !== false) {
+                return $xmlResponse;
+            }
+
+            throw new \RuntimeException("Failed to decode OCS response from {$endpoint}");
         }
 
         if (trim($response) === '') {
@@ -176,12 +185,14 @@ class DeckClass {
             $card = $this->apiCall("POST", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/{$params->board}/stacks/{$params->stack}/cards",$data);
             $card->board = $params->board;
             $card->stack = $params->stack;
-            if($this->responseCode == 200) {
-                if(ASSIGN_SENDER && $user) $this->assignUser($card, $user);
+            $createResponseCode = $this->responseCode;
+            if ($createResponseCode >= 200 && $createResponseCode < 300) {
+                if (ASSIGN_SENDER && $user) {
+                    $this->assignUser($card, $user);
+                }
                 $card->boardTitle = $params->boardTitle;
-                $card->description =  $data->description;
-            }
-            else {
+                $card->description = $data->description;
+            } else {
                 throw new \Exception("Failed to create card on board '{$params->boardTitle}'");
             }
             return $card;
