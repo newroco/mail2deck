@@ -106,7 +106,11 @@ class CreateCardClass{
     function createCard($newcard, $data, $mailSender, $cleanedSubject, $inbox, $board = null){
         $existingCardId = null;
         if ($cleanedSubject !== null && trim($cleanedSubject) !== '') {
-            $existingCardId = $newcard->findCardBySubject($cleanedSubject, $board);
+            $params = $newcard->getParameters($data->title, $board, $mailSender->host);
+            if (!$params) {
+                throw new \RuntimeException("Invalid board parameters or missing board in Nextcloud Deck.");
+            }
+            $existingCardId = $newcard->findCardBySubject($cleanedSubject, $params->board);
         }
         $mailSender->origin .= "{$mailSender->userId}@{$mailSender->host}";
         if (!$existingCardId) {
