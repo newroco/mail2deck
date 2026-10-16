@@ -95,12 +95,21 @@ class CreateCardClass{
     }
 
     function cleanedSubject($subject, $description, $newcard) {
-        if (strpos($subject, "RE: ") !== false || strpos($subject, "Fwd") !== false || strpos($subject, "FW:") !== false || strpos($subject, "Re:") !== false) {
-            $cleanedSubject = preg_replace('/^(Re: |RE: |Fwd: |FW: )\s*/i', '', $subject);
-        }else{
-            $cleanedSubject = $newcard->findOriginalSubject(strip_tags($description));
+        $candidateSubject = trim((string) $subject);
+
+        if (strpos($candidateSubject, "RE: ") !== false || strpos($candidateSubject, "Fwd") !== false || strpos($candidateSubject, "FW:") !== false || strpos($candidateSubject, "Re:") !== false) {
+            $cleanedSubject = preg_replace('/^(Re: |RE: |Fwd: |FW: )\s*/i', '', $candidateSubject);
+        } else {
+            $subjectFromBody = $newcard->findOriginalSubject(strip_tags($description));
+            $cleanedSubject = $subjectFromBody !== null && trim((string) $subjectFromBody) !== ''
+                ? trim((string) $subjectFromBody)
+                : $candidateSubject;
         }
-        return $cleanedSubject;
+
+        $cleanedSubject = preg_replace('/\s+[bsud]-(?:"[^"]*"|\'[^\']*\'|[^\s]+)/i', '', $cleanedSubject);
+        $cleanedSubject = trim((string) $cleanedSubject);
+
+        return $cleanedSubject !== '' ? $cleanedSubject : null;
     }
 
     function createCard($newcard, $data, $mailSender, $cleanedSubject, $inbox, $board = null){
