@@ -1,14 +1,36 @@
 <?php
 define("NC_SERVER", "localhost"); // https://server.domain (without "https://" attachments will not be created)
+define("NC_HOST", "host"); //server.domain
 define("NC_USER", "deckbot");
 define("NC_PASSWORD", "****"); // if your Nextcloud instance uses Two-Factor-Authentication, use generated token here instead of password.
+define("NC_ADMIN_USER", "admin"); // to access the nextcloud users list you need an admin
+define("NC_ADMIN_PASSWORD", "admin");
 define("MAIL_SERVER", "localhost"); // server.domain
 define("MAIL_SERVER_FLAGS", "/novalidate-cert"); // flags needed to connect to server. Refer to https://www.php.net/manual/en/function.imap-open.php for a list of valid flags.
 define("MAIL_SERVER_PORT", "143");
 define("MAIL_SERVER_SMTPPORT", "587"); // port for outgoing smtp server. Actually only used to configure Docker image outgoing SMTP Server
-define("MAIL_USER", "incoming");
+define("MAIL_USER", "incoming"); // IMAP/SMTP login username. This does not need to be an email address.
 define("MAIL_PASSWORD", "****");
+define("MAIL_FROM", "mail2deck@example.com"); // valid email address used as the From header for notifications
 define("DECODE_SPECIAL_CHARACTERS", true); //requires mbstring, if false special characters (like öäüß) won't be displayed correctly
 define("ASSIGN_SENDER", true); // if true, sender will be assigned to card if has NC account
 define("MAIL_NOTIFICATION", true); // if true, send notifications when a new card was created or an error occured
 define("DELETE_MAIL_AFTER_PROCESSING", true);
+define("FAILED_EMAIL_RETRY_COOLDOWN", 900); // seconds before retrying an email when both normal processing and error persistence fail
+define("FAILED_EMAIL_RETRY_MAX_COOLDOWN", 3600); // maximum retry delay for repeated hard failures
+define("FAILED_EMAIL_STATE_FILE", __DIR__ . "/var/failed_emails.json"); // local retry ledger for hard-failed emails
+define("NC_BOARD", [ //default Board to use in case it's not sent via email
+    "DEFAULT_BOARD" => "Support",
+    "OA_BOARD" => "OA Support",
+    "CA_BOARD" => "CA Support"
+]);
+
+define("SUBMITTER_ADDRESS", [
+    "DOMAIN_OA" => "@oa",
+    "DOMAIN_CA" => "@ca"
+]);
+define("MAIL_SUPPORT","");//If not empty, use this value to send to the Support team: card url, the description and who submitted the request.
+
+define("ROCKETCHAT_WEBHOOK", ""); //add rocketchat notification webhook
+
+define("MIN_ATTACHMENT_SIZE", 5120); // in bytes; images smaller than this are not attached

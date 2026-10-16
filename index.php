@@ -5,10 +5,77 @@ require_once(__DIR__ . '/config.php');
 
 use Mail2Deck\MailClass;
 use Mail2Deck\DeckClass;
-use Mail2Deck\ConvertToMD;
+use Mail2Deck\AttachmentClass;
+use Mail2Deck\CreateCardClass;
+
+function failedEmailStatePath() {
+    return defined('FAILED_EMAIL_STATE_FILE') ? FAILED_EMAIL_STATE_FILE : __DIR__ . '/var/failed_emails.json';
+}
+
+function loadFailedEmailState() {
+    $path = failedEmailStatePath();
+    if (!is_file($path)) {
+        return [];
+    }
+
+    $contents = file_get_contents($path);
+    if ($contents === false || $contents === '') {
+        return [];
+    }
+
+    $state = json_decode($contents, true);
+
+    return is_array($state) ? $state : [];
+}
+
+function saveFailedEmailState(array $state) {
+    $path = failedEmailStatePath();
+    $directory = dirname($path);
+
+    if (!is_dir($directory)) {
+        mkdir($directory, 0777, true);
+    }
+
+    file_put_contents($path, json_encode($state, JSON_PRETTY_PRINT));
+}
+
+function buildFailedEmailKey($overview, MailClass $inbox, $email) {
+    if (isset($overview->{'Message-ID'}) && trim($overview->{'Message-ID'}) !== '') {
+        return 'message-id:' . trim($overview->{'Message-ID'});
+    }
+
+    return 'uid:' . $inbox->getUid($email);
+}
+
+function failedEmailRetryDelay($attempts) {
+    $baseDelay = defined('FAILED_EMAIL_RETRY_COOLDOWN') ? FAILED_EMAIL_RETRY_COOLDOWN : 900;
+    $maxDelay = defined('FAILED_EMAIL_RETRY_MAX_COOLDOWN') ? FAILED_EMAIL_RETRY_MAX_COOLDOWN : 3600;
+
+    return min($baseDelay * max(1, (int) $attempts), $maxDelay);
+}
+
+function shouldDelayFailedEmail(array $state, $key) {
+    return isset($state[$key]['retry_after']) && $state[$key]['retry_after'] > time();
+}
+
+function recordFailedEmailAttempt(array &$state, $key, \Throwable $primaryError, \Throwable $persistenceError = null) {
+    $attempts = ($state[$key]['attempts'] ?? 0) + 1;
+    $state[$key] = [
+        'attempts' => $attempts,
+        'retry_after' => time() + failedEmailRetryDelay($attempts),
+        'last_error' => $primaryError->getMessage(),
+        'last_error_persist_error' => $persistenceError ? $persistenceError->getMessage() : null,
+        'updated_at' => date(DATE_ATOM),
+    ];
+}
+
+function clearFailedEmailAttempt(array &$state, $key) {
+    unset($state[$key]);
+}
 
 $inbox = new MailClass();
 $emails = $inbox->getNewMessages();
+$failedEmailState = loadFailedEmailState();
 
 if(!$emails) {
     // delete all messages marked for deletion and return
@@ -16,114 +83,115 @@ if(!$emails) {
     return;
 }
 
-for ($j = 0; $j < count($emails) && $j < 5; $j++) {
-    $structure = $inbox->fetchMessageStructure($emails[$j]);
-    $base64encode = false;
-    if($structure->encoding == 3) {
-        $base64encode = true; // BASE64
-    }
-    $attachments = array();
-    $attNames = array();
-    if (isset($structure->parts) && count($structure->parts)) {
-        for ($i = 0; $i < count($structure->parts); $i++) {
-            if ($structure->parts[$i]->ifdparameters) {
-                foreach ($structure->parts[$i]->dparameters as $object) {
-                    if (strtolower($object->attribute) == 'filename') {
-                        $attachments[$i]['is_attachment'] = true;
-                        $attachments[$i]['filename'] = $object->value;
-                    }
-                }
-            }
+$defaultBoard = NC_BOARD["DEFAULT_BOARD"];
 
-            if ($structure->parts[$i]->ifparameters) {
-                foreach ($structure->parts[$i]->parameters as $object) {
-                    if (strtolower($object->attribute) == 'name') {
-                        $attachments[$i]['is_attachment'] = true;
-                        $attachments[$i]['name'] = $object->value;
-                    }
-                }
-            }
+$processedEmails = 0;
+$maxEmailsPerRun = 5;
 
-            if ($attachments[$i]['is_attachment']) {
-                $attachments[$i]['attachment'] = $inbox->fetchMessageBody($emails[$j], $i+1);
-                if ($structure->parts[$i]->encoding == 3) { // 3 = BASE64
-                    $attachments[$i]['attachment'] = base64_decode($attachments[$i]['attachment']);
-                }
-                elseif ($structure->parts[$i]->encoding == 4) { // 4 = QUOTED-PRINTABLE
-                    $attachments[$i]['attachment'] = quoted_printable_decode($attachments[$i]['attachment']);
-                }
-            }
-        }
-    }
-    for ($i = 1; $i <= count($attachments); $i++) {
-        if(! file_exists(getcwd() . '/attachments')) {
-            mkdir(getcwd() . '/attachments');
-        }
-        if ($attachments[$i]['is_attachment'] == 1) {
-            $filename = $attachments[$i]['name'];
-            if (empty($filename)) $filename = $attachments[$i]['filename'];
+foreach ($emails as $emailNumber) {
+    $overview = $inbox->headerInfo($emailNumber);
+    $emailKey = buildFailedEmailKey($overview, $inbox, $emailNumber);
 
-            $fp = fopen(getcwd() . '/attachments/' . $filename, "w+");
-            fwrite($fp, $attachments[$i]['attachment']);
-            fclose($fp);
-            array_push($attNames, $attachments[$i]['filename']);
-        }
+    if (shouldDelayFailedEmail($failedEmailState, $emailKey)) {
+        continue;
     }
 
-    $overview = $inbox->headerInfo($emails[$j]);
-    $board = null;
-    if(isset($overview->{'X-Original-To'}) && strstr($overview->{'X-Original-To'}, '+')) {
-        $board = strstr(substr($overview->{'X-Original-To'}, strpos($overview->{'X-Original-To'}, '+') + 1), '@', true);
-    } else {
-        if(strstr($overview->to[0]->mailbox, '+')) {
-            $board = substr($overview->to[0]->mailbox, strpos($overview->to[0]->mailbox, '+') + 1);
-        }
-    };
+    if ($processedEmails >= $maxEmailsPerRun) {
+        break;
+    }
 
-    if(strstr($board, '+')) $board = str_replace('+', ' ', $board);
-
+    $processedEmails++;
+    $processedSuccessfully = false;
+    $body = null;
     $data = new stdClass();
-    $data->title = DECODE_SPECIAL_CHARACTERS ? mb_decode_mimeheader($overview->subject) : $overview->subject;
-    $data->type = "plain";
-    $data->order = -time();
-    $body = $inbox->fetchMessageBody($emails[$j], 1.1);
-    if ($body == "") {
-        $body = $inbox->fetchMessageBody($emails[$j], 1);
-    }
-    if(count($attachments)) {
+    $data->title = null;
+    $data->description = null;
+    $attachmentFiles = [];
+
+    try {
+        $structure = $inbox->fetchMessageStructure($emailNumber);
+        $base64encode = false;
+        if($structure->encoding == 3) {
+            $base64encode = true; // BASE64
+        }
+
+        // Check for attachments
+        $attclass = new AttachmentClass();
+        $attNames = $attclass->Attachment($structure, $inbox, $emailNumber);
+        foreach ($attNames as $attachment) {
+            if (is_array($attachment) && isset($attachment['path'])) {
+                $attachmentFiles[] = $attachment['path'];
+            }
+        }
+
+        // Create Card
+        $createCardClass = new CreateCardClass();
+        $board = $createCardClass->extractBoardName($overview);
+
+        $mailSender = new stdClass();
+        $data = $createCardClass->createMailData($overview, new stdClass());
+        $body = $createCardClass->fetchMailBody($structure, $inbox, $emailNumber);
+
+        $newcard = new DeckClass();
         $data->attachments = $attNames;
-        $description = DECODE_SPECIAL_CHARACTERS ? quoted_printable_decode($body) : $body;
-    } else {
-        $description = DECODE_SPECIAL_CHARACTERS ? quoted_printable_decode($body) : $body;
-    }
-    if($base64encode) {
-        $description = base64_decode($description);
-    }
-    if($description != strip_tags($description)) {
-        $description = (new ConvertToMD($description))->execute();
-    }
-    $data->description = $description;
-    $mailSender = new stdClass();
-    $mailSender->userId = $overview->reply_to[0]->mailbox;
+        $data->description = $createCardClass->mailDescription($body, $base64encode, $attNames, false);
 
-    $newcard = new DeckClass();
-    $response = $newcard->addCard($data, $mailSender, $board);
-    $mailSender->origin .= "{$overview->reply_to[0]->mailbox}@{$overview->reply_to[0]->host}";
+        $mailSender->userId = $overview->reply_to[0]->mailbox ?? "unknown";
+        $mailSender->host = $overview->reply_to[0]->host ?? "unknown";
 
-    if(MAIL_NOTIFICATION) {
-        if($response) {
-            $inbox->reply($mailSender->origin, $response);
-        } else {
-            $inbox->reply($mailSender->origin);
+        $cleanedSubject = $createCardClass->cleanedSubject($data->title, $data->description, $newcard);
+        $createCardClass->createCard($newcard, $data, $mailSender, $cleanedSubject, $inbox, $board);
+        $processedSuccessfully = true;
+
+    } catch (\Throwable $e) {
+        try {
+            $newcard = new DeckClass();
+            $errorData = new stdClass();
+
+            $createCardClass = new CreateCardClass();
+            $cleanedSubject = $data->title && $data->description
+                ? $createCardClass->cleanedSubject($data->title, $data->description, $newcard)
+                : ($overview->subject ?? 'Unknown');
+
+            $errorData->title = "Error processing email  #" . $emailNumber;
+            $errorData->description = "An error occurred:\n" ."\n\n"
+                                    . "Subject: " . ($cleanedSubject ?? 'Unknown') . "\n"
+                                    . "From: " . ($overview->fromaddress ?? 'Unknown') . "\n"
+                                    . "Date: " . ($overview->date ?? date('Y-m-d H:i:s')) . "\n\n"
+                                    . "Error: " . ($e->getMessage() ?? 'Unknown error') . "\n\n"
+                                    . "Original message:\n" . ($body ?? 'No content');
+
+            $errorData->type = "plain";
+            $errorData->order = -time();
+            $errorData->attachments = [];
+
+            $mailSender = new stdClass();
+            $mailSender->userId = "system";
+            $mailSender->host = $overview->reply_to[0]->host ?? "unknown";
+
+            $createCardClass->createCard($newcard, $errorData, $mailSender, $errorData->title, $inbox, $defaultBoard);
+            $processedSuccessfully = true;
+        } catch (\Throwable $persistenceError) {
+            recordFailedEmailAttempt($failedEmailState, $emailKey, $e, $persistenceError);
+            error_log("mail2deck failed to process email {$emailNumber}: {$e->getMessage()} | error persistence failed: {$persistenceError->getMessage()}");
+        }
+    } finally {
+        foreach (array_unique($attachmentFiles) as $attachmentFile) {
+            if (is_string($attachmentFile) && $attachmentFile !== '' && is_file($attachmentFile)) {
+                unlink($attachmentFile);
+            }
         }
     }
-    if(!$response) {
-        foreach($attNames as $attachment) unlink(getcwd() . "/attachments/" . $attachment);
-    }
 
-    //remove email after processing
-    if(DELETE_MAIL_AFTER_PROCESSING) {
-        $inbox->delete($emails[$j]);
+    if ($processedSuccessfully) {
+        clearFailedEmailAttempt($failedEmailState, $emailKey);
+        $inbox->markAsRead($emailNumber);
+
+        if (DELETE_MAIL_AFTER_PROCESSING) {
+            $inbox->delete($emailNumber);
+        }
     }
 }
+
+saveFailedEmailState($failedEmailState);
 ?>
