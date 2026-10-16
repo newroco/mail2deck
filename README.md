@@ -35,11 +35,11 @@ Note:
 * You can add attachments in the email and those will be integrated in the created card
 
 
-### 2.3: Specify assignee
+### 2.3: Specify assignee(s)
 
 Here's what the email subject should look like:
 
-`Update website logo b-'website' s-'to do' u-'bob'`
+`Update website logo b-'website' s-'to do' u-'bob' u-'marc' u-'john'`
 
 * *You can use single or double quotes.*
 * *Case-insensitive for board, stack and user respectively.*
@@ -48,7 +48,7 @@ Here's what the email subject should look like:
 You can use the optional parameter `d-` to add a due date to a card.
 Here's what the email subject should look like if you want to set a due date to the card:
 
-`Update website logo b-'website' s-'to do' u-'bob' d-'2022-08-22T19:29:30+00:00'`
+`Update website logo b-'website' s-'to do' u-'bob' u-'marc' u-'john' d-'2022-08-22T19:29:30+00:00'`
 
 * *You can use single or double quotes.*
 

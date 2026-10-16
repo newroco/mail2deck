@@ -103,11 +103,12 @@ class DeckClass {
 
     public function getParameters($params, $boardFromMail = null, $mail_domain) {// get the board and the stack
         $userFromMail = null;
+        $userIdsFromMail = [];
         $duedateFromMail = null;
 	    if(!$boardFromMail) // if board is not set within the email address, look for board into email subject
         	if(preg_match('/b-"([^"]+)"/', $params, $m) || preg_match("/b-'([^']+)'/", $params, $m)) {
-            		$boardFromMail = $m[1];
-            		$params = str_replace($m[0], '', $params);
+            	    	$boardFromMail = $m[1];
+            	    	$params = str_replace($m[0], '', $params);
         	}else{
                 $emailSenderDomain = '@'.strtolower($mail_domain);
                 if($emailSenderDomain === SUBMITTER_ADDRESS["DOMAIN_OA"]){
@@ -122,11 +123,17 @@ class DeckClass {
             $stackFromMail = $m[1];
             $params = str_replace($m[0], '', $params);
         }
-        if(preg_match('/u-"([^"]+)"/', $params, $m) || preg_match("/u-'([^']+)'/", $params, $m)) {
-            $userFromMail = $m[1];
-            $params = str_replace($m[0], '', $params);
+        if (preg_match_all('/u-(?:"([^"]+)"|\'([^\']+)\'|([^\s]+))/', $params, $matches, PREG_SET_ORDER)) {
+            foreach ($matches as $match) {
+                $parsedUser = trim($match[1] !== '' ? $match[1] : ($match[2] !== '' ? $match[2] : ($match[3] ?? '')));
+                if ($parsedUser !== '') {
+                    $userIdsFromMail[] = $parsedUser;
+                }
+            }
+            $params = preg_replace('/\s*u-(?:"[^"]*"|\'[^\']*\'|[^\s]+)/', '', $params);
         }
-        if(preg_match('/d-"([^"]+)"/', $params, $m) || preg_match("/d-'([^']+)'/", $params, $m)) {
+        if (!empty($userIdsFromMail)) {
+            $userFromMail = $userIdsFromMail[0];
             $duedateFromMail = $m[1];
             $params = str_replace($m[0], '', $params);
         }
@@ -170,6 +177,7 @@ class DeckClass {
         $boardStack->newTitle = $params;
         $boardStack->boardTitle = $boardName;
         $boardStack->userId = $userFromMail !== null ? strtolower($userFromMail) : null;
+        $boardStack->userIds = array_values(array_unique(array_map('strtolower', $userIdsFromMail)));
         $boardStack->dueDate = $duedateFromMail;
 
 
@@ -187,8 +195,18 @@ class DeckClass {
             $card->stack = $params->stack;
             $createResponseCode = $this->responseCode;
             if ($createResponseCode >= 200 && $createResponseCode < 300) {
+                $assignedUsers = [];
+                if (!empty($params->userIds)) {
+                    foreach ($params->userIds as $assignedUser) {
+                        $assignedUsers[] = strtolower(trim((string) $assignedUser));
+                    }
+                }
                 if (ASSIGN_SENDER && $user) {
-                    $this->assignUser($card, $user);
+                    $assignedUsers[] = strtolower(trim((string) $user));
+                }
+
+                if (!empty($assignedUsers)) {
+                    $this->assignUsers($card, array_values(array_unique($assignedUsers)));
                 }
                 $card->boardTitle = $params->boardTitle;
                 $card->description = $data->description;
@@ -367,20 +385,32 @@ class DeckClass {
         return $newDescription;
     }
 
-    //Assign a user to the card
-    public function assignUser($card, $mailUser)
+    //Assign one or more users to the card
+    public function assignUsers($card, array $mailUsers)
     {
         $board = $this->getBoardById($card->board);
         if ($board === null) {
             return;
         }
 
-        $userId = $this->resolveUserIdByEmail($mailUser, $board);
-        if ($userId === null) {
-            return;
-        }
+        foreach ($mailUsers as $mailUser) {
+            $mailUser = trim((string) $mailUser);
+            if ($mailUser === '') {
+                continue;
+            }
 
-        $this->apiCall("PUT", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/{$card->board}/stacks/{$card->stack}/cards/{$card->id}/assignUser", ['userId' => (string) $userId]);
+            $userId = $this->resolveUserIdByEmail($mailUser, $board);
+            if ($userId === null) {
+                continue;
+            }
+
+            $this->apiCall("PUT", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/{$card->board}/stacks/{$card->stack}/cards/{$card->id}/assignUser", ['userId' => (string) $userId]);
+        }
+    }
+
+    public function assignUser($card, $mailUser)
+    {
+        $this->assignUsers($card, [$mailUser]);
     }
 
     private function resolveUserIdByEmail($mailUser, $board = null)
