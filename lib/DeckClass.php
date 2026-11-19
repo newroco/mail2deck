@@ -239,6 +239,8 @@ class DeckClass {
                 throw new \RuntimeException("Attachment file does not exist: $file");
             }
             $data = array(
+                'type' => 'file',
+                'data' => '',
                 'file' => new \CURLFile($file, mime_content_type($file) ?: 'application/octet-stream', $displayName)
             );
             $response = $this->apiCall("POST", NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/{$boardId}/stacks/{$stackId}/cards/{$cardId}/attachments?type=file", $data, true);
@@ -372,13 +374,18 @@ class DeckClass {
             $newDescription = preg_replace($cidPattern, "[$filename]($url)", $newDescription, 1);
         }
 
+        $owner = $card->owner ?? '';
+        if (is_object($owner)) {
+            $owner = $owner->uid ?? $owner->primaryKey ?? '';
+        }
+
         $data = [
-            'title' => $card->title,
+            'title' => (string) $card->title,
             'description' => $newDescription,
-            'type' => $card->type,
-            'order' =>$card->order,
-            'duedate'=>$card->duedate,
-            'owner'=>$card->owner
+            'type' => (string) ($card->type ?? 'plain'),
+            'order' => (int) ($card->order ?? 0),
+            'duedate' => $card->duedate ?? null,
+            'owner' => (string) $owner,
         ];
 
         $this->apiCall("PUT",NC_SERVER . "/index.php/apps/deck/api/v1.0/boards/{$card->board}/stacks/{$card->stack}/cards/{$card->id}",$data);
